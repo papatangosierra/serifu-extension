@@ -67,15 +67,15 @@ export class SerifuDoc {
     do {
       if (cursor.type.name === "Page") {
         // associate current page number with index of last this.pageData element
-        this.pageMap.set(pageNum, this.pageData.length);
+        this.pageMap.set(pageNum + 1, this.pageData.length);
         this.pageData.push([]);
-        pageNum++;
         panelNum = -1;
+        pageNum++;
       }
       if (cursor.type.name === "Spread") {
         // associate current AND NEXT page numbers with index of last this.pageData element
-        this.pageMap.set(pageNum, this.pageData.length);
         this.pageMap.set(pageNum + 1, this.pageData.length);
+        this.pageMap.set(pageNum + 2, this.pageData.length);
         this.pageData.push([]);
         pageNum += 2;
         panelNum = -1;
@@ -153,6 +153,21 @@ export class SerifuDoc {
         });
       }
     } while (cursor.next());
+  }
+
+  // linesForPage takes an integer page number and returns a flat array of the
+  // text line objects appearing on that page.
+  linesForPage(pageNum) {
+    let textLines = [];
+    this.pageData[pageNum].forEach((el) => {
+      el.forEach((em) => {
+        if (em.type === "Text") {
+          textLines.push(em);
+        }
+      });
+    });
+    console.log(`theDoc.linesForPage: ${JSON.stringify(textLines)}`);
+    return textLines;
   }
 
   get pageMapAndData() {

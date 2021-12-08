@@ -8,7 +8,7 @@ import {
 } from "./components/setup-panel.jsx";
 import { SerifuDoc } from "./doc.js";
 import { serifuText } from "./components/test-data.js";
-import { paragraphStyles, currentPage } from "./interface.js";
+import { paragraphStyles, currentPage, testLink } from "./interface.js";
 
 export const theDoc = new SerifuDoc(serifuText);
 
@@ -41,6 +41,10 @@ function QueueTestButton() {
   );
 }
 
+function LinkTestButton() {
+  return <button onClick={testLink}>Test INDD Link</button>;
+}
+
 function App() {
   return (
     <Tabs>
@@ -51,6 +55,7 @@ function App() {
       <TabPanel>
         <ScriptPanel />
         <QueueTestButton />
+        <LinkTestButton />
       </TabPanel>
       <TabPanel>
         <StyleToGrafStyle />

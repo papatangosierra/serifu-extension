@@ -2,6 +2,14 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { testData } from "./test-data.js";
 import { theDoc } from "../app.jsx";
+import {
+  currentDisplayPage,
+  registerPageCheck,
+  unRegisterPageCheck,
+  activateAutoplaceQueue,
+} from "../interface.js";
+
+let globalAutoplaceActive = false;
 
 function Line(props) {
   const content = props.content;
@@ -109,8 +117,16 @@ function Page(props) {
   );
 }
 
-function AutoplaceToggle(props) {
+function AutoplaceToggle() {
   const [autoplaceActive, setAutoplaceActive] = useState(false);
+  function toggle() {
+    setAutoplaceActive(!autoplaceActive);
+  }
+
+  useEffect(() => {
+    // this is really ugly but I'm not clever enough to get around using some global state
+    globalAutoplaceActive = autoplaceActive;
+  });
 
   return (
     <div className="section">
@@ -119,7 +135,7 @@ function AutoplaceToggle(props) {
           autoplaceActive ? "autoplace-toggle-on" : "autoplace-toggle-off"
         }
         id="autoplace-toggle-button"
-        onClick={() => setAutoplaceActive(!autoplaceActive)}
+        onClick={toggle}
       >
         {autoplaceActive ? "Deactivate Autoplace" : "Activate autoplace"}
       </button>
@@ -131,26 +147,42 @@ function AutoplaceToggle(props) {
 It sets up an event listener for the "newScriptPage" event, which will contain the data for a new script page to be rendered and displayed.
 */
 export function ScriptPanel() {
-  // const [pageData, setPageData] = useState(testData[0]);
-  const [pageData, setPageData] = useState(theDoc.pageData[2]);
-
-  // wrapper function to give event listener to call on update
-  function updateWithNewPage(newPageData) {
-    useState(newPageData);
-  }
+  const [pageData, setPageData] = useState(theDoc.pageData[0]);
+  const [lineQueue, setLineQueue] = useState(theDoc.linesForPage[0]);
+  // updateWithNewPage is only called upon firing of the onNewDisplayPage event,
+  // which will contain in its detail property the data for the new page.
+  const updateWithNewPage = (e) => {
+    setLineQueue(theDoc.linesForPage[e.detail]);
+    setPageData(theDoc.pageData[e.detail]);
+  };
 
   useEffect(() => {
-    document.addEventListener("newScriptPage", updateWithNewPage);
+    document.addEventListener("onNewDisplayPage", updateWithNewPage);
+    registerPageCheck();
+    // if autoplace is on, then activate the autoplace queue with our first line
+    // if (globalAutoplaceActive) {
+    // activateAutoplaceQueue(lineQueue[0]);
+    // }
+    console.log(`current line queue: ${JSON.stringify(lineQueue)}`);
     return () => {
       // cleanup function; React calls this when the component unmounts
-      document.removeEventListener("newScriptPage", updateWithNewPage);
+      document.removeEventListener("onNewDisplayPage", updateWithNewPage);
+      unRegisterPageCheck();
     };
   });
-
-  return (
-    <div>
-      <AutoplaceToggle />
-      <Page data={pageData} />
-    </div>
-  );
+  if (pageData) {
+    return (
+      <div>
+        <AutoplaceToggle />
+        <Page data={pageData} />
+      </div>
+    );
+  } else {
+    return (
+      <div>
+        <AutoplaceToggle />
+        <div className="no-data">No script data for this page found.</div>
+      </div>
+    );
+  }
 }
