@@ -13,17 +13,6 @@ import { paragraphStyles, currentPage, testLink } from "./interface.js";
 export const theDoc = new SerifuDoc(serifuText);
 
 function QueueTestButton() {
-  let textLines = [];
-  theDoc.pageData[2].forEach((el) => {
-    console.log("got text Panel");
-    el.forEach((em) => {
-      if (em.type === "Text") {
-        textLines.push(em);
-        console.log("got textLine");
-      }
-    });
-  });
-
   return (
     <button
       onClick={() => {

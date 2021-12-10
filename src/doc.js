@@ -166,7 +166,7 @@ export class SerifuDoc {
         }
       });
     });
-    console.log(`theDoc.linesForPage: ${JSON.stringify(textLines)}`);
+    //console.log(`theDoc.linesForPage: ${JSON.stringify(textLines)}`);
     return textLines;
   }
 

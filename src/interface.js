@@ -4,6 +4,7 @@ import { theDoc } from "./app.jsx";
 
 // top-level state. There might be a better way to do this than global state, but I'm not sure what it is.
 export let currentDisplayPage = 1;
+
 let pageCheck = null; // the interval for checkDisplayPage
 
 // List of Paragraph and Character styles
@@ -26,7 +27,7 @@ export const characterStyles = [
 export const currentPage = 1;
 
 // instantiate our interface to the host script
-const csInterface = new CSInterface();
+export const csInterface = new CSInterface();
 
 // helper function to return a promise object from a CSInterface call
 
@@ -62,6 +63,15 @@ function checkDisplayPage() {
   });
 }
 
+export function placeLineInINDDTextFrame(nextLine) {
+  console.log(`attempting to place: ${JSON.stringify(nextLine)}`);
+  csInterface.evalScript(`placeNextLine(${JSON.stringify(nextLine)})`);
+}
+
+export function clearINDDSelection() {
+  csInterface.evalScript("clearSelectionAndActivateSelectionTool();");
+}
+
 export function registerPageCheck() {
   pageCheck = setInterval(checkDisplayPage, 500);
 }
@@ -69,8 +79,4 @@ export function registerPageCheck() {
 // call to stop the page check from occurring
 export function unRegisterPageCheck() {
   clearInterval(pageCheck);
-}
-
-export function activateAutoplaceQueue(firstLine) {
-  csInterface.evalScript(`activateLineQueue("${JSON.stringify(firstLine)}")`);
 }

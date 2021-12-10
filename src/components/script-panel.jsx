@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { testData } from "./test-data.js";
 import { theDoc } from "../app.jsx";
 import {
+  csInterface,
   currentDisplayPage,
   registerPageCheck,
   unRegisterPageCheck,
-  activateAutoplaceQueue,
+  placeLineInINDDTextFrame,
+  clearINDDSelection,
 } from "../interface.js";
-
-let globalAutoplaceActive = false;
 
 function Line(props) {
   const content = props.content;
@@ -83,7 +83,6 @@ function Note(props) {
 }
 
 function Panel(props) {
-  console.log("Panel running");
   const data = props.data;
   const panelContent = data.map((el, i) => {
     if (el.type === "Text") {
@@ -117,27 +116,24 @@ function Page(props) {
   );
 }
 
-function AutoplaceToggle() {
-  const [autoplaceActive, setAutoplaceActive] = useState(false);
+function AutoplaceToggle(props) {
   function toggle() {
-    setAutoplaceActive(!autoplaceActive);
+    // clear the INDD selection and select the select tool
+    // fire an autoplaceStateChange event indicating that the autoplace was toggled.
+    const e = new CustomEvent("autoplaceToggleFired");
+    document.dispatchEvent(e); // dispatch onNewDisplayPage event
   }
-
-  useEffect(() => {
-    // this is really ugly but I'm not clever enough to get around using some global state
-    globalAutoplaceActive = autoplaceActive;
-  });
 
   return (
     <div className="section">
       <button
         className={
-          autoplaceActive ? "autoplace-toggle-on" : "autoplace-toggle-off"
+          props.autoplaceActive ? "autoplace-toggle-on" : "autoplace-toggle-off"
         }
         id="autoplace-toggle-button"
         onClick={toggle}
       >
-        {autoplaceActive ? "Deactivate Autoplace" : "Activate autoplace"}
+        {props.autoplaceActive ? "Deactivate Autoplace" : "Activate autoplace"}
       </button>
     </div>
   );
@@ -146,34 +142,72 @@ function AutoplaceToggle() {
 /* The ScriptPanel component contains the state for the currently displayed page of the script.
 It sets up an event listener for the "newScriptPage" event, which will contain the data for a new script page to be rendered and displayed.
 */
+
 export function ScriptPanel() {
+  const [lineQueue, _setLineQueue] = useState(theDoc.linesForPage(0)); // _setLineQueue because we're defining setLineQueue in a few lines
   const [pageData, setPageData] = useState(theDoc.pageData[0]);
-  const [lineQueue, setLineQueue] = useState(theDoc.linesForPage[0]);
-  // updateWithNewPage is only called upon firing of the onNewDisplayPage event,
-  // which will contain in its detail property the data for the new page.
-  const updateWithNewPage = (e) => {
-    setLineQueue(theDoc.linesForPage[e.detail]);
+  const [autoplaceActive, setAutoplaceActive] = useState(false);
+
+  const lineQueueRef = useRef(lineQueue); // this ref's .current will hold state that we can mutate and dispatch
+
+  function setLineQueue(data) {
+    lineQueueRef.current = data;
+    _setLineQueue(data);
+  }
+
+  // ********************************************************************
+  // GOOD MORNING PAUL: Today you're starting by rewriting ScriptPanel and AutoplaceToggle such that the
+  // autoplace activation state lives natively inside ScriptPanel, and is passed down to AutoplaceToggle
+  // in a prop.
+  // ********************************************************************
+  function updateWithNewPage(e) {
+    setLineQueue(theDoc.linesForPage(e.detail));
     setPageData(theDoc.pageData[e.detail]);
-  };
+  }
+  // send the next line and update queue state only if autoplace is currently active
+  function dispatchNextLine() {
+    if (autoplaceActive) {
+      console.log(
+        "setting Next Line: " + JSON.stringify(lineQueueRef.current[0])
+      );
+      placeLineInINDDTextFrame(lineQueueRef.current[0]);
+      setLineQueue(lineQueue.slice(1));
+    }
+  }
+
+  function togglePlaceQueue() {
+    console.log(
+      `caught autoplace toggle event. autoPlace was: ${autoplaceActive}`
+    );
+    setAutoplaceActive(!autoplaceActive);
+  }
 
   useEffect(() => {
+    // set global next queued line to first element of our current queue.
+    // updateWithNewPage is only called upon firing of the onNewDisplayPage event,
+    // which will contain in its detail property the data for the new page.
     document.addEventListener("onNewDisplayPage", updateWithNewPage);
     registerPageCheck();
-    // if autoplace is on, then activate the autoplace queue with our first line
-    // if (globalAutoplaceActive) {
-    // activateAutoplaceQueue(lineQueue[0]);
-    // }
-    console.log(`current line queue: ${JSON.stringify(lineQueue)}`);
+    // add listener for autoplaceStateChange, which will activate the autoplace queue when
+    // the new state is true.
+    document.addEventListener("autoplaceToggleFired", togglePlaceQueue);
+    csInterface.addEventListener("afterSelectionChanged", dispatchNextLine);
+
     return () => {
       // cleanup function; React calls this when the component unmounts
       document.removeEventListener("onNewDisplayPage", updateWithNewPage);
+      document.removeEventListener("autoplaceToggleFired", togglePlaceQueue);
+      csInterface.removeEventListener(
+        "afterSelectionChanged",
+        dispatchNextLine
+      );
       unRegisterPageCheck();
     };
   });
   if (pageData) {
     return (
       <div>
-        <AutoplaceToggle />
+        <AutoplaceToggle autoplaceActive={autoplaceActive} />
         <Page data={pageData} />
       </div>
     );
