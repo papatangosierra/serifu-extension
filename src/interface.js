@@ -6,7 +6,7 @@ import { theDoc } from "./app.jsx";
 export let currentDisplayPage = 1;
 
 let pageCheck = null; // the interval for checkDisplayPage
-
+let styleCheck = null; // the interval for checking for new styles
 // List of Paragraph and Character styles
 
 export const paragraphStyles = [
@@ -55,6 +55,8 @@ function checkDisplayPage() {
     // we need to fire the onNewDisplayPage event with appropriate data.
     if (currentDisplayPage != theDoc.pageMap.get(curState.page)) {
       let e = new CustomEvent("onNewDisplayPage", {
+        // use the pageMap lookup table to find the correct index in the page array
+        // to reference for this INDD display page
         detail: theDoc.pageMap.get(curState.page),
       });
       document.dispatchEvent(e); // dispatch onNewDisplayPage event
@@ -79,4 +81,31 @@ export function registerPageCheck() {
 // call to stop the page check from occurring
 export function unRegisterPageCheck() {
   clearInterval(pageCheck);
+}
+
+// Style setting functions
+
+export function getINDDGrafStyles() {
+  // console.log("asking for paragraph styles");
+  csInterface.evalScript("getDocParagraphStyles();", (response) => {
+    const grafStyles = JSON.parse(response);
+    // console.log("got styles: " + JSON.stringify(grafStyles));
+    const e = new CustomEvent("grafStylesFetched", { detail: grafStyles });
+    document.dispatchEvent(e);
+  });
+}
+
+export function registerStyleCheck() {
+  styleCheck = setInterval(getINDDGrafStyles, 2000);
+}
+
+export function unRegisterStyleCheck() {
+  clearInterval(styleCheck);
+}
+
+// linkScriptNameToParagraphStyle calls the similarly-named function in the host jsx script with the given arguments, linking a style in the script to a Paragraph Style in the INDD doc
+export function linkScriptNameToGrafStyle(linkType, name, id) {
+  let params = '"' + linkType + '","' + name + '",' + id;
+  // console.log(`linking ${linkType} ${name} to paragraph style id ` + id);
+  csInterface.evalScript("linkScriptNameToParagraphStyle(" + params + ")");
 }

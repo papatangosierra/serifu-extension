@@ -155,12 +155,8 @@ export function ScriptPanel() {
     _setLineQueue(data);
   }
 
-  // ********************************************************************
-  // GOOD MORNING PAUL: Today you're starting by rewriting ScriptPanel and AutoplaceToggle such that the
-  // autoplace activation state lives natively inside ScriptPanel, and is passed down to AutoplaceToggle
-  // in a prop.
-  // ********************************************************************
   function updateWithNewPage(e) {
+    console.log(`looking for page index: ${e.detail}`);
     setLineQueue(theDoc.linesForPage(e.detail));
     setPageData(theDoc.pageData[e.detail]);
   }
@@ -170,6 +166,12 @@ export function ScriptPanel() {
       console.log(
         "setting Next Line: " + JSON.stringify(lineQueueRef.current[0])
       );
+      // fire placeQueueUpdate to notify display to highlight next line.
+      const e = new CustomEvent("placeQueueUpdate", {
+        detail: lineQueueRef.current[1], // send NEXT line in queue, not this one
+      });
+      document.dispatchEvent(e);
+
       placeLineInINDDTextFrame(lineQueueRef.current[0]);
       setLineQueue(lineQueue.slice(1));
     }
@@ -179,11 +181,25 @@ export function ScriptPanel() {
     console.log(
       `caught autoplace toggle event. autoPlace was: ${autoplaceActive}`
     );
+    // if autoplace isn't active, that means it's about to become active, so we should clear the
+    // current INDD selection and pick the selection tool
+    if (!autoplaceActive) {
+      clearINDDSelection();
+      // also, fire placeQueueUpdate to start line highlighting
+      const e = new CustomEvent("placeQueueUpdate", {
+        detail: lineQueueRef.current[0], // send first line in queue
+      });
+      document.dispatchEvent(e);
+    } else {
+      const e = new CustomEvent("placeQueueUpdate", {
+        detail: { foo: "bar" }, // send nonce to all matches fail and nothing is marked as next
+      });
+      document.dispatchEvent(e);
+    }
     setAutoplaceActive(!autoplaceActive);
   }
 
   useEffect(() => {
-    // set global next queued line to first element of our current queue.
     // updateWithNewPage is only called upon firing of the onNewDisplayPage event,
     // which will contain in its detail property the data for the new page.
     document.addEventListener("onNewDisplayPage", updateWithNewPage);

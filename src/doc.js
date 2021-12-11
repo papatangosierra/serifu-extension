@@ -64,21 +64,24 @@ export class SerifuDoc {
     this.pageMap = new Map([]); // the map that will map INDD page numbers to array items.
     let pageNum = -1; // counters
     let panelNum = -1;
+    let spreadCount = 0; // this holds the offset to account for any spreads we hit
     do {
       if (cursor.type.name === "Page") {
         // associate current page number with index of last this.pageData element
-        this.pageMap.set(pageNum + 1, this.pageData.length);
+        this.pageMap.set(pageNum + spreadCount + 1, this.pageData.length);
         this.pageData.push([]);
         panelNum = -1;
         pageNum++;
       }
       if (cursor.type.name === "Spread") {
+        console.log("doc found a spread");
         // associate current AND NEXT page numbers with index of last this.pageData element
-        this.pageMap.set(pageNum + 1, this.pageData.length);
-        this.pageMap.set(pageNum + 2, this.pageData.length);
+        this.pageMap.set(pageNum + spreadCount + 1, this.pageData.length);
+        this.pageMap.set(pageNum + spreadCount + 2, this.pageData.length);
         this.pageData.push([]);
-        pageNum += 2;
+        pageNum++;
         panelNum = -1;
+        spreadCount++;
       }
       if (cursor.type.name === "Panel") {
         this.pageData[pageNum].push([]);

@@ -2,10 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import { ScriptPanel } from "./components/script-panel.jsx";
-import {
-  StyleToGrafStyle,
-  SourceToGrafStyle,
-} from "./components/setup-panel.jsx";
+import { StyleMenuPanel } from "./components/setup-panel.jsx";
 import { SerifuDoc } from "./doc.js";
 import { serifuText } from "./components/test-data.js";
 import { paragraphStyles, currentPage, testLink } from "./interface.js";
@@ -47,8 +44,7 @@ function App() {
         <LinkTestButton />
       </TabPanel>
       <TabPanel>
-        <StyleToGrafStyle />
-        <SourceToGrafStyle />
+        <StyleMenuPanel />
       </TabPanel>
     </Tabs>
   );
