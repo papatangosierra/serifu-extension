@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import { ScriptPanel } from "./components/script-panel.jsx";

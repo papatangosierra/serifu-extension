@@ -64,66 +64,77 @@ export class SerifuDoc {
     this.pageMap = new Map([]); // the map that will map INDD page numbers to array items.
     let pageNum = -1; // counters
     let panelNum = -1;
-    let spreadCount = 0; // this holds the offset to account for any spreads we hit
+    let spreadCount = 0; // this holds the offset to account for any spreads we hit. It will grow as spreads are encountered, making sure our pageMap remains accurate while still letting us use pageNum to index our page array as we build it.
     do {
       if (cursor.type.name === "Page") {
-        // associate current page number with index of last this.pageData element
-        this.pageMap.set(pageNum + spreadCount + 1, this.pageData.length);
-        this.pageData.push([]);
-        panelNum = -1;
+        // associate current page number with index of last pageStruct element
+        pageMap.set(pageNum, pageStruct.length);
+        pageStruct.push([]);
         pageNum++;
+        panelNum = -1;
       }
       if (cursor.type.name === "Spread") {
-        console.log("doc found a spread");
-        // associate current AND NEXT page numbers with index of last this.pageData element
-        this.pageMap.set(pageNum + spreadCount + 1, this.pageData.length);
-        this.pageMap.set(pageNum + spreadCount + 2, this.pageData.length);
-        this.pageData.push([]);
-        pageNum++;
+        // associate current AND NEXT page numbers with index of last pageStruct element
+        pageMap.set(pageNum, pageStruct.length);
+        pageMap.set(pageNum + 1, pageStruct.length);
+        pageStruct.push([]);
+        pageOffsetWithSpreads++;
+        pageNum += 2;
         panelNum = -1;
-        spreadCount++;
       }
       if (cursor.type.name === "Panel") {
-        this.pageData[pageNum].push([]);
+        pageStruct[pageNum - pageOffsetWithSpreads].push([]);
         panelNum++;
       }
       if (cursor.type.name === "SfxTranslation") {
-        this.pageData[pageNum][panelNum].push({
+        pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push({
           type: "Sfx",
           text: this.text.substring(cursor.from, cursor.to).trim(),
         });
       }
       if (cursor.type.name === "Note") {
-        this.pageData[pageNum][panelNum].push({
+        pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push({
           type: "Note",
           text: this.text.substring(cursor.from, cursor.to),
         });
       }
-      if (cursor.type.name === "Source") {
-        // if we've found a Source token, we know we're in a Text line, so we can add the line and
+      if (cursor.type.name === "Text") {
+        // if we've found a Text token, we can add the line and
         // assign the source simultaneously.
-        this.pageData[pageNum][panelNum].push({
+        pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push({
           type: "Text",
-          source: this.text.substring(cursor.from, cursor.to),
+          source: null,
           style: null,
           content: [],
         });
       }
+      if (cursor.type.name === "Source") {
+        // save this as the most recently found Source
+        lastSource = this.text.substring(cursor.from, cursor.to);
+        // clear any saved Styles:
+        lastStyle = null;
+      }
       if (cursor.type.name === "Style") {
-        this.pageData = deepEdit(
-          this.pageData,
-          "style",
-          this.text.substring(cursor.from, cursor.to)
-        );
+        // save this as the most recently found Style
+        lastStyle = this.text.substring(cursor.from, cursor.to);
+      }
+      if (cursor.type.name === "Content") {
+        // If have found a Content node, we've passed Source and Style,
+        // which means we can apply the last-found Source and Style to the
+        // node. If the containing Text node didn't have a Source or Style
+        // specified, we won't have encountered those nodes, so the last-specified
+        // Source and Style will control.
+        pageStruct = deepEdit(pageStruct, "source", lastSource);
+        pageStruct = deepEdit(pageStruct, "style", lastStyle);
       }
       if (cursor.type.name === "Bold") {
-        this.pageData = deepPush(this.pageData, {
+        pageStruct = deepPush(pageStruct, {
           emphasis: "Bold",
           text: this.text.substring(cursor.from, cursor.to).replace(/\*/g, ""), // remove asterisks
         });
       }
       if (cursor.type.name === "BoldItal") {
-        this.pageData = deepPush(this.pageData, {
+        pageStruct = deepPush(pageStruct, {
           emphasis: "BoldItal",
           text: this.text
             .substring(cursor.from, cursor.to)
@@ -131,7 +142,7 @@ export class SerifuDoc {
         });
       }
       if (cursor.type.name === "Ital") {
-        this.pageData = deepPush(this.pageData, {
+        pageStruct = deepPush(pageStruct, {
           emphasis: "Ital",
           text: this.text.substring(cursor.from, cursor.to).replace(/\_/g, ""), // remove underscores
         });
@@ -144,13 +155,13 @@ export class SerifuDoc {
           cursor.type.name === "Underscore") &&
         cursor.node.parent.name === "Content"
       ) {
-        this.pageData = deepPush(this.pageData, {
+        pageStruct = deepPush(pageStruct, {
           emphasis: "none",
           text: this.text.substring(cursor.from, cursor.to), // push text as-is
         });
       }
       if (cursor.type.name === "BlockText") {
-        this.pageData = deepPush(this.pageData, {
+        pageStruct = deepPush(pageStruct, {
           emphasis: "BlockText",
           text: this.text.substring(cursor.from, cursor.to), // push text as-is
         });
