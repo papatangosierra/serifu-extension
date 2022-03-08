@@ -58,39 +58,55 @@ export class SerifuDoc {
         this.styles.push(this.text.substring(cursor.from, cursor.to));
       }
     } while (cursor.next());
-    // reassign cursor for second pass
+
+
+    // reassign cursor for second pass, and build canonical AST
     cursor = parser.parse(this.text).cursor();
-    this.pageData = []; // the nested array structure we'll use to provide information to the INDD extension
-    this.pageMap = new Map([]); // the map that will map INDD page numbers to array items.
-    let pageNum = -1; // counters
+    let pageMap = new Map([]);
+    let pageStruct = [];
+    let pageOffsetWithSpreads = 0; // we increment this every time a spread is encountered, to derive an offset
+    let pageNum = -1;
     let panelNum = -1;
-    let spreadCount = 0; // this holds the offset to account for any spreads we hit. It will grow as spreads are encountered, making sure our pageMap remains accurate while still letting us use pageNum to index our page array as we build it.
+    let lineID = 0; // we assign a document-unique line number to every Text and SFX line.
+    let lastSource = "";
+    let lastStyle = "";
     do {
       if (cursor.type.name === "Page") {
+        // increment immediately so we can reference pageNum as current
+        pageNum++;
         // associate current page number with index of last pageStruct element
         pageMap.set(pageNum, pageStruct.length);
         pageStruct.push([]);
-        pageNum++;
         panelNum = -1;
       }
       if (cursor.type.name === "Spread") {
+        pageNum += 2;
         // associate current AND NEXT page numbers with index of last pageStruct element
+        pageMap.set(pageNum - 1, pageStruct.length);
         pageMap.set(pageNum, pageStruct.length);
-        pageMap.set(pageNum + 1, pageStruct.length);
         pageStruct.push([]);
         pageOffsetWithSpreads++;
-        pageNum += 2;
         panelNum = -1;
       }
       if (cursor.type.name === "Panel") {
-        pageStruct[pageNum - pageOffsetWithSpreads].push([]);
         panelNum++;
+        pageStruct[pageNum - pageOffsetWithSpreads].push([]);
       }
       if (cursor.type.name === "SfxTranslation") {
         pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push({
           type: "Sfx",
           text: this.text.substring(cursor.from, cursor.to).trim(),
+          id: lineID,
         });
+        lineID++;
+      }
+      if (cursor.type.name === "SfxSource") {
+        // add its value to the Sfx object, which should be right before this.
+        pageStruct = deepEdit(
+          pageStruct,
+          "translationOf",
+          this.text.substring(cursor.from + 1, cursor.to - 1)
+        ); // we strip off the enclosing parens
       }
       if (cursor.type.name === "Note") {
         pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push({
@@ -105,8 +121,10 @@ export class SerifuDoc {
           type: "Text",
           source: null,
           style: null,
+          id: lineID,
           content: [],
         });
+        lineID++;
       }
       if (cursor.type.name === "Source") {
         // save this as the most recently found Source
@@ -130,21 +148,25 @@ export class SerifuDoc {
       if (cursor.type.name === "Bold") {
         pageStruct = deepPush(pageStruct, {
           emphasis: "Bold",
-          text: this.text.substring(cursor.from, cursor.to).replace(/\*/g, ""), // remove asterisks
+          text: this.text.substring(cursor.from + 1, cursor.to - 1), // remove enclosing asterisks
         });
       }
       if (cursor.type.name === "BoldItal") {
         pageStruct = deepPush(pageStruct, {
           emphasis: "BoldItal",
-          text: this.text
-            .substring(cursor.from, cursor.to)
-            .replace(/\*\*/g, ""), // remove double asterisks
+          text: this.text.substring(cursor.from + 2, cursor.to - 2), // remove enclosing double asterisks
         });
       }
       if (cursor.type.name === "Ital") {
         pageStruct = deepPush(pageStruct, {
           emphasis: "Ital",
-          text: this.text.substring(cursor.from, cursor.to).replace(/\_/g, ""), // remove underscores
+          text: this.text.substring(cursor.from + 1, cursor.to - 1), // remove enclosing underscores
+        });
+      }
+      if (cursor.type.name === "Newline") {
+        pageStruct = deepPush(pageStruct, {
+          emphasis: "none",
+          text: "\n", // remove underscores
         });
       }
       if (
@@ -153,7 +175,8 @@ export class SerifuDoc {
           cursor.type.name === "Colon" ||
           cursor.type.name === "DoubleStar" ||
           cursor.type.name === "Underscore") &&
-        cursor.node.parent.name === "Content"
+        (cursor.node.parent.name === "Content" ||
+          cursor.node.parent.name === "StyleBlock")
       ) {
         pageStruct = deepPush(pageStruct, {
           emphasis: "none",
@@ -163,49 +186,53 @@ export class SerifuDoc {
       if (cursor.type.name === "BlockText") {
         pageStruct = deepPush(pageStruct, {
           emphasis: "BlockText",
-          text: this.text.substring(cursor.from, cursor.to), // push text as-is
+          text: this.text.substring(cursor.from + 2, cursor.to - 2), // push text as-is
         });
       }
     } while (cursor.next());
+    console.log("canonical AST:");
+    console.log(JSON.stringify(pageStruct, 0, 4));
+    this.pageData = pageStruct;
+    this.pageMap = pageMap;
   }
 
-  // linesForPage takes an integer page number and returns a flat array of the
-  // text line objects appearing on that page.
-  linesForPage(pageNum) {
-    let textLines = [];
-    this.pageData[pageNum].forEach((el) => {
-      el.forEach((em) => {
-        if (em.type === "Text") {
-          textLines.push(em);
-        }
+    // linesForPage takes an integer page number and returns a flat array of the
+    // text line objects appearing on that page.
+    linesForPage(pageNum) {
+      let textLines = [];
+      this.pageData[pageNum].forEach((el) => {
+        el.forEach((em) => {
+          if (em.type === "Text") {
+            textLines.push(em);
+          }
+        });
       });
-    });
-    //console.log(`theDoc.linesForPage: ${JSON.stringify(textLines)}`);
-    return textLines;
-  }
+      //console.log(`theDoc.linesForPage: ${JSON.stringify(textLines)}`);
+      return textLines;
+    }
 
   get pageMapAndData() {
-    return { pageMap: this.pageMap, pageData: this.pageData };
-  }
+      return { pageMap: this.pageMap, pageData: this.pageData };
+    }
 
   get sourceChanged() {
-    return this.sources.length != this.prevSourceCount;
-  }
+      return this.sources.length != this.prevSourceCount;
+    }
 
   get styleChanged() {
-    return this.styles.length != this.prevStyleCount;
-  }
+      return this.styles.length != this.prevStyleCount;
+    }
 
   get getSources() {
-    //    console.log("A document source list has been requested");
-    return this.sources;
-  }
+      //    console.log("A document source list has been requested");
+      return this.sources;
+    }
 
   get getStyles() {
-    return this.styles;
-  }
+      return this.styles;
+    }
 
   get getText() {
-    return this.text;
+      return this.text;
+    }
   }
-}

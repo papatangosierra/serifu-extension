@@ -37,7 +37,7 @@ Note {
 }
 
 Text {
-		(Source )? ("/" Style )?  attribToken Content newline
+	(Source )? ("/" Style )?  attribToken Content newline
 }
 
 Source {
@@ -58,12 +58,16 @@ contentText {
 
 StyleBlock { 
 	 styleBlockOpen 
-			( UnstyledText | Bold | BoldItal | Ital | Star | Colon | DoubleStar | Underscore | newline )+
+			( UnstyledText | Bold | BoldItal | Ital | Star | Colon | DoubleStar | Underscore | Newline)+
 		styleBlockClose 
-	}
+}
 
 UnstyledText {
 	anyText
+}
+
+Newline {
+  newline
 }
 
 @skip {
@@ -72,8 +76,8 @@ UnstyledText {
 
 @tokens {
 	space { $[\u0009 \u000b\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff] }
-	attribToken { ":" space* }
 	newline { $[\r\n\u2028\u2029] }
+  attribToken { ":" space* }
 	
 	wordChar { std.asciiLetter | $[\u{a1}-\u{10ffff}] | std.digit | "-" | "'" | "&" | " "}
 	@precedence { Ital, word }

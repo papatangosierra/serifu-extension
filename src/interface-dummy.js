@@ -42,13 +42,12 @@ export function testLink() {
   csInterface.evalScript('alert("testing panel link")');
 }
 
-/* checkDisplayPage is called every second or so. It looks to see whether the 
-currently displayed script page still matches the currently active InDesign 
-page. It checks the page number that INDD reports against the SerifuDoc.pageMap 
-mapping to find the script data for the currently displayed page irrespective 
-of spreads. If the displayedscript page needs to change, checkDisplayPage 
-dispatches an onNewDisplayPage event containing the data for the new current 
-page. If autoplace is active, the queue is also refreshed with the new data. */
+/* checkDisplayPage is called every second or so. It looks to see whether the currently displayed script page
+still matches the currently active InDesign page. It checks the page number that INDD reports against
+the SerifuDoc.pageMap mapping to find the script data for the page irrespective of spreads. If the displayed
+script page needs to change, checkDisplayPage dispatches an onNewDisplayPage event containing the data for the
+new current page. If autoplace is active, the queue is also refreshed with the new data.
+*/
 function checkDisplayPage() {
   csInterface.evalScript("getCurrentState();", (response) => {
     let curState = JSON.parse(response);
@@ -64,6 +63,7 @@ function checkDisplayPage() {
       currentDisplayPage = theDoc.pageMap.get(curState.page); // update state of currentDisplayPage
     }
   });
+  
 }
 
 export function placeLineInINDDTextFrame(nextLine) {

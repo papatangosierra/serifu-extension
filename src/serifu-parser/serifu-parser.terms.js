@@ -19,9 +19,11 @@ export const
   DoubleStar = 17,
   Underscore = 18,
   BlockText = 19,
-  Note = 20,
-  Sfx = 21,
-  SfxTranslation = 22,
-  SfxSource = 23,
-  Spread = 24,
-  SpreadToken = 25
+  StyleBlock = 20,
+  Newline = 21,
+  Note = 22,
+  Sfx = 23,
+  SfxTranslation = 24,
+  SfxSource = 25,
+  Spread = 26,
+  SpreadToken = 27

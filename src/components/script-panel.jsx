@@ -17,12 +17,18 @@ function Line(props) {
 
   // add an event listener for when this Line is next in the place queue
   useEffect(() => {
-    // this is really inefficient because I'm setting as many eventListeners as there are
-    // dialogue lines on the current page, each of which compares itself to the detail of the event every
-    // time the event fires.
+    /* This is less inefficient than it used to be, and a bug has been squashed.  
+    There's still an event listener on every Line, which feels inefficient. However,
+    that event listener isn't doing a comparison of the JSON-stringified content
+    of the line anymore—since each line has a globally unique id number assigned
+    at parse time, we can just listen for that id number. If a given line hears
+    its ID number announced as the next one to be placed, it highlights itself.
+    */
     function compareAndUpdate(e) {
       // consider using deepequal or something here eventually
-      if (JSON.stringify(e.detail.content) === JSON.stringify(props.content)) {
+      console.log(`event line id: ${e.detail.id}`);
+      console.log(`component props id: ${props.id}`)
+      if (e.detail.id === props.id) {
         setLineIsNext(true);
       } else {
         setLineIsNext(false);
@@ -92,6 +98,7 @@ function Panel(props) {
           source={el.source}
           style={el.style}
           content={el.content}
+          id={el.id}
           next={el.next}
         />
       );
@@ -170,6 +177,8 @@ export function ScriptPanel() {
       const e = new CustomEvent("placeQueueUpdate", {
         detail: lineQueueRef.current[1], // send NEXT line in queue, not this one
       });
+      console.log(`firing placeQueueUpdate event with ${JSON.stringify(lineQueueRef.current[1])}`)
+
       document.dispatchEvent(e);
 
       placeLineInINDDTextFrame(lineQueueRef.current[0]);

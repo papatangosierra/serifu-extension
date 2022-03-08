@@ -5,28 +5,28 @@
   "private": "true",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "lezer-generator serifu.grammar --output src/serifu-parser/serifu-parser.js && webpack"
+    "build": "lezer-generator src/serifu.grammar --output src/serifu-parser/serifu-parser.js && webpack"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@babel/cli": "^7.16.0",
-    "@babel/core": "^7.16.0",
-    "@babel/plugin-transform-runtime": "^7.16.0",
-    "@babel/preset-env": "^7.16.0",
-    "@babel/preset-react": "^7.16.0",
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.5",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-react": "^7.16.7",
     "babel-loader": "^8.2.3",
     "clean-webpack-plugin": "^3.0.0",
     "html-webpack-plugin": "^4.5.0",
-    "webpack": "^5.56.0",
-    "webpack-cli": "^4.2.0"
+    "webpack": "^5.70.0",
+    "webpack-cli": "^4.9.2"
   },
   "dependencies": {
-    "@babel/runtime": "^7.16.0",
-    "@lezer/generator": "",
+    "@babel/runtime": "^7.17.2",
     "@lezer/common": "",
-    "@lezer/lr": "",
+    "@lezer/generator": "^0.15.4",
+    "@lezer/lr": "^0.15.8",
     "react": "",
     "react-dom": "",
     "react-tabs": "^3.2.3"
