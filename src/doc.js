@@ -70,6 +70,8 @@ export class SerifuDoc {
     let lineID = 0; // we assign a document-unique line number to every Text and SFX line.
     let lastSource = "";
     let lastStyle = "";
+    let curLine = null;
+    let prevLine = null;
     do {
       if (cursor.type.name === "Page") {
         // increment immediately so we can reference pageNum as current
@@ -78,6 +80,9 @@ export class SerifuDoc {
         pageMap.set(pageNum, pageStruct.length);
         pageStruct.push([]);
         panelNum = -1;
+        // clear nextLine and prevLine; our Lines are only linked within a given Page
+        curLine = null;
+        prevLine = null;
       }
       if (cursor.type.name === "Spread") {
         pageNum += 2;
@@ -117,13 +122,24 @@ export class SerifuDoc {
       if (cursor.type.name === "Text") {
         // if we've found a Text token, we can add the line and
         // assign the source simultaneously.
-        pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push({
+        curLine = {
           type: "Text",
           source: null,
           style: null,
           id: lineID,
           content: [],
-        });
+          next: null,
+          prev: prevLine, // will be null when this is the first Text of the page
+        }
+        if (prevLine === null) {
+          pageStruct[pageNum - pageOffsetWithSpreads].firstText = curLine;
+        }
+        // set the next of the last line to this one, if there is a last line at all
+        if (prevLine) { prevLine.next = curLine; }
+        // move the current line into the previous position
+        prevLine = curLine;
+        // add the current line to the struct
+        pageStruct[pageNum - pageOffsetWithSpreads][panelNum].push(curLine);
         lineID++;
       }
       if (cursor.type.name === "Source") {
@@ -190,8 +206,9 @@ export class SerifuDoc {
         });
       }
     } while (cursor.next());
-    console.log("canonical AST:");
-    console.log(JSON.stringify(pageStruct, 0, 4));
+    // console.log("canonical AST:");
+    // console.log(JSON.stringify(pageStruct, 0, 4));
+    console.log(`first text line is: ${pageStruct[0].firstText.content[0].text}`)
     this.pageData = pageStruct;
     this.pageMap = pageMap;
   }

@@ -29,6 +29,18 @@ export const currentPage = 1;
 // instantiate our interface to the host script
 export const csInterface = new CSInterface();
 
+// object describing our keyboard shortcuts
+
+let keyboardEvents = [{
+  "keyCode": 80,
+},{
+  "keyCode": 35
+}]
+
+// register our interest in keyboard events for our shortcuts.
+console.log(`registering interest in key events: ${JSON.stringify(keyboardEvents)}`)
+csInterface.registerKeyEventsInterest(JSON.stringify(keyboardEvents))
+
 // helper function to return a promise object from a CSInterface call
 
 function runEvalScript(script) {
@@ -67,8 +79,16 @@ function checkDisplayPage() {
 }
 
 export function placeLineInINDDTextFrame(nextLine) {
+  nextLine.next = null;
+  nextLine.previous = null; // clear circular structures
   console.log(`attempting to place: ${JSON.stringify(nextLine)}`);
-  csInterface.evalScript(`placeNextLine(${JSON.stringify(nextLine)})`);
+  csInterface.evalScript(`placeNextLine(${nextLine})`);
+}
+
+export function createTextBox(nextLine) {
+  const geometricBounds = [0,0,10,10]
+  console.log(`attempting to create text box for: ${JSON.stringify(nextLine)}`);
+  csInterface.evalScript(`createTextAtBounds(${JSON.stringify(nextLine)},${JSON.stringify(geometricBounds)})`);
 }
 
 export function clearINDDSelection() {

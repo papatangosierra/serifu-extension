@@ -9,6 +9,7 @@ import {
   unRegisterPageCheck,
   placeLineInINDDTextFrame,
   clearINDDSelection,
+  createTextBox
 } from "../interface.js";
 
 function Line(props) {
@@ -26,8 +27,8 @@ function Line(props) {
     */
     function compareAndUpdate(e) {
       // consider using deepequal or something here eventually
-      console.log(`event line id: ${e.detail.id}`);
-      console.log(`component props id: ${props.id}`)
+      // console.log(`event line id: ${e.detail.id}`);
+      // console.log(`component props id: ${props.id}`)
       if (e.detail.id === props.id) {
         setLineIsNext(true);
       } else {
@@ -99,7 +100,7 @@ function Panel(props) {
           style={el.style}
           content={el.content}
           id={el.id}
-          next={el.next}
+          next={false}
         />
       );
     }
@@ -151,7 +152,7 @@ It sets up an event listener for the "newScriptPage" event, which will contain t
 */
 
 export function ScriptPanel() {
-  const [lineQueue, _setLineQueue] = useState(theDoc.linesForPage(0)); // _setLineQueue because we're defining setLineQueue in a few lines
+  const [lineQueue, _setLineQueue] = useState(theDoc.pageData[0].firstText); // _setLineQueue because we're defining setLineQueue in a few lines
   const [pageData, setPageData] = useState(theDoc.pageData[0]);
   const [autoplaceActive, setAutoplaceActive] = useState(false);
 
@@ -164,26 +165,37 @@ export function ScriptPanel() {
 
   function updateWithNewPage(e) {
     console.log(`looking for page index: ${e.detail}`);
-    setLineQueue(theDoc.linesForPage(e.detail));
+    setLineQueue(theDoc.pageData[e.detail].firstText);
     setPageData(theDoc.pageData[e.detail]);
   }
   // send the next line and update queue state only if autoplace is currently active
   function dispatchNextLine() {
     if (autoplaceActive) {
       console.log(
-        "setting Next Line: " + JSON.stringify(lineQueueRef.current[0])
+        "setting Next Line: " + JSON.stringify(lineQueueRef.current.id)
       );
       // fire placeQueueUpdate to notify display to highlight next line.
       const e = new CustomEvent("placeQueueUpdate", {
-        detail: lineQueueRef.current[1], // send NEXT line in queue, not this one
+        detail: lineQueueRef.current.next, // send NEXT line in queue, not this one
       });
-      console.log(`firing placeQueueUpdate event with ${JSON.stringify(lineQueueRef.current[1])}`)
+      console.log(`firing placeQueueUpdate event with ${lineQueueRef.current.next.id}`)
 
       document.dispatchEvent(e);
-
-      placeLineInINDDTextFrame(lineQueueRef.current[0]);
-      setLineQueue(lineQueue.slice(1));
+      console.log(`trying to place lineQueueRef.current: ${lineQueueRef.current.id}`)
+      placeLineInINDDTextFrame(lineQueueRef.current);
+      setLineQueue(lineQueue.next);
     }
+  }
+
+  // createNextLine will create a new text frame with the contents of the next enqueued line
+  // advancing the queue, regardless of whether auto-place is on or off
+  function createNextLine(e) {
+    console.log(
+      "attempting to create new line" + JSON.stringify(lineQueueRef.current.content[0].text)
+    );
+    createTextBox(lineQueueRef.current);
+    setLineQueue(lineQueue.current.next);
+    console.log(`keycode: ${e.code}`)
   }
 
   function togglePlaceQueue() {
@@ -196,15 +208,17 @@ export function ScriptPanel() {
       clearINDDSelection();
       // also, fire placeQueueUpdate to start line highlighting
       const e = new CustomEvent("placeQueueUpdate", {
-        detail: lineQueueRef.current[0], // send first line in queue
+        detail: lineQueueRef.current // send first line in queue
       });
+      console.log(`firing placeQueueUpdate event with ${lineQueueRef.current.id}`)
       document.dispatchEvent(e);
-    } else {
-      const e = new CustomEvent("placeQueueUpdate", {
-        detail: { foo: "bar" }, // send nonce to all matches fail and nothing is marked as next
-      });
-      document.dispatchEvent(e);
-    }
+    } 
+    // else {
+    //   const e = new CustomEvent("placeQueueUpdate", {
+    //     detail: { foo: "bar" }, // send nonce to all matches fail and nothing is marked as next
+    //   });
+    //   document.dispatchEvent(e);
+    // }
     setAutoplaceActive(!autoplaceActive);
   }
 
@@ -217,11 +231,14 @@ export function ScriptPanel() {
     // the new state is true.
     document.addEventListener("autoplaceToggleFired", togglePlaceQueue);
     csInterface.addEventListener("afterSelectionChanged", dispatchNextLine);
-
-    return () => {
+    // add listener for keyboard shortcut event that creates text box with next line in queue
+    document.addEventListener('keydown', createNextLine);
+    
+        return () => {
       // cleanup function; React calls this when the component unmounts
       document.removeEventListener("onNewDisplayPage", updateWithNewPage);
       document.removeEventListener("autoplaceToggleFired", togglePlaceQueue);
+      document.removeEventListener('keydown', createNextLine);
       csInterface.removeEventListener(
         "afterSelectionChanged",
         dispatchNextLine
