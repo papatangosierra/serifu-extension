@@ -71,6 +71,46 @@ export function placeLineInINDDTextFrame(nextLine) {
   csInterface.evalScript(`placeNextLine(${JSON.stringify(nextLine)})`);
 }
 
+export function placeAllTextForPage(pageData) {
+  console.log(
+    `placing all text for current page with data: ${JSON.stringify(
+      pageData,
+      0,
+      4
+    )}`
+  );
+  // the -1 arg tells placeAllTextForPage to use the current displayed page
+  csInterface.evalScript(
+    `placeAllTextForPage(${JSON.stringify(
+      pageData.map((panel) => {
+        return panel.filter((line) => {
+          return line.type === "Text";
+        });
+      })
+    )},-1)`
+  );
+}
+
+export function stageAllTextForDocument() {
+  console.log(`pages in script: ${theDoc.pagesInScript}`);
+  for (let i = 0; i < theDoc.pagesInScript; i++) {
+    console.log(`placing text on page ${i}`);
+    console.log(`which maps to ${theDoc.pageMap.get(i)}`);
+    // this means we'll be dispatching spread text twice, but that's okay.
+    // this is also an insanely ugly solution -- what's going on here is that we're mapping
+    // each panel through a filter that strips out everything except for Text lines
+    csInterface.evalScript(
+      `placeAllTextForPage(${JSON.stringify(
+        theDoc.pageData[theDoc.pageMap.get(i)].map((panel) => {
+          return panel.filter((line) => {
+            return line.type === "Text";
+          });
+        })
+      )}, ${i} )`
+    );
+  }
+}
+
 export function clearINDDSelection() {
   csInterface.evalScript("clearSelectionAndActivateSelectionTool();");
 }

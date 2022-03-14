@@ -6,3 +6,4 @@ build.sh
 /.nova
 /.vscode
 /test
+.prettierrc

@@ -62,7 +62,7 @@ export class SerifuDoc {
 
     // reassign cursor for second pass, and build canonical AST
     cursor = parser.parse(this.text).cursor();
-    let pageMap = new Map([]);
+    let pageMap = new Map([]); // holds the mapping for physical book page numbers (whicher are one-indexed, and have one per page but two for spreads) to AST page array indices (which are zero-indexed, one per page and spread)
     let pageStruct = [];
     let pageOffsetWithSpreads = 0; // we increment this every time a spread is encountered, to derive an offset
     let pageNum = -1;
@@ -190,10 +190,11 @@ export class SerifuDoc {
         });
       }
     } while (cursor.next());
-    console.log("canonical AST:");
-    console.log(JSON.stringify(pageStruct, 0, 4));
+    // console.log("canonical AST:");
+    // console.log(JSON.stringify(pageStruct, 0, 4));
     this.pageData = pageStruct;
     this.pageMap = pageMap;
+    this.pagesInScript = pageStruct.length + pageOffsetWithSpreads;
   }
 
     // linesForPage takes an integer page number and returns a flat array of the
@@ -204,6 +205,20 @@ export class SerifuDoc {
         el.forEach((em) => {
           if (em.type === "Text") {
             textLines.push(em);
+          }
+        });
+      });
+      //console.log(`theDoc.linesForPage: ${JSON.stringify(textLines)}`);
+      return textLines;
+    }
+
+    nestedLinesForPage(pageNum) {
+      let textLines = [];
+      this.pageData[pageNum].forEach((panel, i) => {
+        textLines.push([]);
+        panel.forEach((line) => {
+          if (line.type === "Text") {
+            textLines[i].push(line);
           }
         });
       });

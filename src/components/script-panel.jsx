@@ -9,6 +9,8 @@ import {
   unRegisterPageCheck,
   placeLineInINDDTextFrame,
   clearINDDSelection,
+  placeAllTextForPage,
+  stageAllTextForDocument
 } from "../interface.js";
 
 function Line(props) {
@@ -110,14 +112,31 @@ function Panel(props) {
       return <Note key={"note-" + i.toString()} text={el.text} />;
     }
   });
-  return <div className="panel">{panelContent}</div>;
+  return (
+    <div className="panel">
+      <button>Place</button>
+      {panelContent}
+    </div>
+    );
 }
 
 function Page(props) {
   const data = props.data;
   const panels = data.map((el, i) => <Panel key={i.toString()} data={el} />);
+
+  function stagePageText() {
+    placeAllTextForPage(data);
+  }
+
+  function stageAllText() {
+    stageAllTextForDocument();
+  }
+
   return (
     <div className="section">
+      <button onClick={stagePageText}>Stage Page Text</button>
+      <button onClick={stageAllText}>Stage All Text</button>
+
       <div className="page">{panels}</div>
     </div>
   );
@@ -151,38 +170,39 @@ It sets up an event listener for the "newScriptPage" event, which will contain t
 */
 
 export function ScriptPanel() {
-  const [lineQueue, _setLineQueue] = useState(theDoc.linesForPage(0)); // _setLineQueue because we're defining setLineQueue in a few lines
+  const [lineQueue, setLineQueue] = useState(theDoc.linesForPage(0));
+  const [curLine, setCurLine] = useState(0);
   const [pageData, setPageData] = useState(theDoc.pageData[0]);
   const [autoplaceActive, setAutoplaceActive] = useState(false);
-
-  const lineQueueRef = useRef(lineQueue); // this ref's .current will hold state that we can mutate and dispatch
-
-  function setLineQueue(data) {
-    lineQueueRef.current = data;
-    _setLineQueue(data);
-  }
 
   function updateWithNewPage(e) {
     console.log(`looking for page index: ${e.detail}`);
     setLineQueue(theDoc.linesForPage(e.detail));
     setPageData(theDoc.pageData[e.detail]);
+    setCurLine(0)
   }
   // send the next line and update queue state only if autoplace is currently active
   function dispatchNextLine() {
     if (autoplaceActive) {
       console.log(
-        "setting Next Line: " + JSON.stringify(lineQueueRef.current[0])
+        "setting Next Line: " + JSON.stringify(lineQueue[curLine])
       );
       // fire placeQueueUpdate to notify display to highlight next line.
       const e = new CustomEvent("placeQueueUpdate", {
-        detail: lineQueueRef.current[1], // send NEXT line in queue, not this one
+        detail: lineQueue[curLine + 1], // send NEXT line in queue, not this one
       });
-      console.log(`firing placeQueueUpdate event with ${JSON.stringify(lineQueueRef.current[1])}`)
+      console.log(`firing placeQueueUpdate event with ${JSON.stringify(lineQueue[curLine + 1])}`)
 
       document.dispatchEvent(e);
 
-      placeLineInINDDTextFrame(lineQueueRef.current[0]);
-      setLineQueue(lineQueue.slice(1));
+      placeLineInINDDTextFrame(lineQueue[curLine]);
+      // if we've reached the end of our list of text lines to be placed,
+      // reset to the first one
+      if (curLine >= lineQueue.length) {
+        setCurLine(0)
+      } else { // otherwise increment to the next one
+        setCurLine(curLine + 1)
+      }
     }
   }
 
@@ -193,15 +213,16 @@ export function ScriptPanel() {
     // if autoplace isn't active, that means it's about to become active, so we should clear the
     // current INDD selection and pick the selection tool
     if (!autoplaceActive) {
-      clearINDDSelection();
-      // also, fire placeQueueUpdate to start line highlighting
+      // fire placeQueueUpdate to start line highlighting
       const e = new CustomEvent("placeQueueUpdate", {
-        detail: lineQueueRef.current[0], // send first line in queue
+        detail: lineQueue[curLine], // send first line in queue
       });
       document.dispatchEvent(e);
+      // clear INDD selection 
+      clearINDDSelection();
     } else {
       const e = new CustomEvent("placeQueueUpdate", {
-        detail: { foo: "bar" }, // send nonce to all matches fail and nothing is marked as next
+        detail: { id: null }, // send nonce so all matches fail and nothing is marked as next
       });
       document.dispatchEvent(e);
     }
