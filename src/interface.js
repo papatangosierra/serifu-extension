@@ -112,7 +112,33 @@ export function stageAllTextForDocument() {
 }
 
 export function clearINDDSelection() {
-  csInterface.evalScript("clearSelectionAndActivateSelectionTool();");
+  csInterface.evalScript("clearSelection();");
+}
+
+export function activateINDDSelectionTool() {
+  csInterface.evalScript("activateSelectionTool();");
+}
+
+export function selectionIsNotEmpty() {
+  return new Promise((resolve, reject) => {
+    csInterface.evalScript("selectionIsNotEmpty();", (response) => {
+      resolve(JSON.parse(response));
+    });
+  })
+}
+
+// registerSelectionCheck takes a function as its argument and sets
+// an event listener for afterSelectionChanged
+export function registerSelectionCheck(action) {
+  csInterface.addEventListener("afterSelectionChanged", action);
+  console.log('added selection change event listener')
+}
+
+// unRegisterSelectionCheck takes a function as its argument and removes that function
+// from the event listener for afterSelectionChanged
+export function unRegisterSelectionCheck(action) {
+  csInterface.removeEventListener("afterSelectionChanged", action);
+  console.log('removed selection change event listener')
 }
 
 export function registerPageCheck() {

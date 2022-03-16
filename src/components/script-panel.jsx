@@ -7,44 +7,21 @@ import {
   currentDisplayPage,
   registerPageCheck,
   unRegisterPageCheck,
+  registerSelectionCheck,
+  unRegisterSelectionCheck,
   placeLineInINDDTextFrame,
   clearINDDSelection,
+  activateINDDSelectionTool,
+  selectionIsNotEmpty,
   placeAllTextForPage,
-  stageAllTextForDocument
+  stageAllTextForDocument,
 } from "../interface.js";
 
 function Line(props) {
-  const content = props.content;
-  const [lineIsNext, setLineIsNext] = useState(props.next);
-
-  // add an event listener for when this Line is next in the place queue
-  useEffect(() => {
-    /* This is less inefficient than it used to be, and a bug has been squashed.  
-    There's still an event listener on every Line, which feels inefficient. However,
-    that event listener isn't doing a comparison of the JSON-stringified content
-    of the line anymore—since each line has a globally unique id number assigned
-    at parse time, we can just listen for that id number. If a given line hears
-    its ID number announced as the next one to be placed, it highlights itself.
-    */
-    function compareAndUpdate(e) {
-      // consider using deepequal or something here eventually
-      console.log(`event line id: ${e.detail.id}`);
-      console.log(`component props id: ${props.id}`)
-      if (e.detail.id === props.id) {
-        setLineIsNext(true);
-      } else {
-        setLineIsNext(false);
-      }
-    }
-    document.addEventListener("placeQueueUpdate", compareAndUpdate);
-    return () => {
-      // cleanup function; React calls this when the component unmounts
-      document.removeEventListener("placeQueueUpdate", compareAndUpdate);
-    };
-  });
-
+  // const content = props.content;
+  const [lineIsNext, setLineIsNext] = useState(props.lineIsNext);
   // build our dialogue line from the content prop
-  const lineContent = content.map((el, i) => {
+  const lineContent = props.content.map((el, i) => {
     if (el.emphasis === "none") {
       return <span key={i.toString()}>{el.text}</span>;
     }
@@ -74,7 +51,7 @@ function Line(props) {
   });
 
   return (
-    <div className={lineIsNext ? "line-next" : "line"}>
+    <div className={props.lineIsNext ? "line-next" : "line"}>
       <div className="line-source">{props.source}</div>
       {props.style ? <div className="line-style">{props.style}</div> : null}
       <div className="line-content">{lineContent}</div>
@@ -94,6 +71,9 @@ function Panel(props) {
   const data = props.data;
   const panelContent = data.map((el, i) => {
     if (el.type === "Text") {
+      console.log(
+        `panel nextLineID prop: ${JSON.stringify(props.nextLineID, 0, 4)}`
+      );
       return (
         <Line
           key={"text-" + i.toString()}
@@ -101,7 +81,7 @@ function Panel(props) {
           style={el.style}
           content={el.content}
           id={el.id}
-          next={el.next}
+          lineIsNext={el.id === props.nextLineID ? true : false}
         />
       );
     }
@@ -112,17 +92,18 @@ function Panel(props) {
       return <Note key={"note-" + i.toString()} text={el.text} />;
     }
   });
-  return (
-    <div className="panel">
-      <button>Place</button>
-      {panelContent}
-    </div>
-    );
+  return <div className="panel">{panelContent}</div>;
 }
 
 function Page(props) {
-  const data = props.data;
-  const panels = data.map((el, i) => <Panel key={i.toString()} data={el} />);
+  const panels = props.data.map((el, i) => (
+    <Panel
+      key={i.toString()}
+      data={el}
+      lineQueue={props.lineQueue}
+      nextLineID={props.nextLineID}
+    />
+  ));
 
   function stagePageText() {
     placeAllTextForPage(data);
@@ -134,33 +115,13 @@ function Page(props) {
 
   return (
     <div className="section">
-      <button onClick={stagePageText}>Stage Page Text</button>
-      <button onClick={stageAllText}>Stage All Text</button>
-
-      <div className="page">{panels}</div>
-    </div>
-  );
-}
-
-function AutoplaceToggle(props) {
-  function toggle() {
-    // clear the INDD selection and select the select tool
-    // fire an autoplaceStateChange event indicating that the autoplace was toggled.
-    const e = new CustomEvent("autoplaceToggleFired");
-    document.dispatchEvent(e); // dispatch onNewDisplayPage event
-  }
-
-  return (
-    <div className="section">
-      <button
-        className={
-          props.autoplaceActive ? "autoplace-toggle-on" : "autoplace-toggle-off"
-        }
-        id="autoplace-toggle-button"
-        onClick={toggle}
-      >
-        {props.autoplaceActive ? "Deactivate Autoplace" : "Activate autoplace"}
+      <button onClick={stagePageText} className={"stage-button"}>
+        Stage Page Text
       </button>
+      <button onClick={stageAllText} className={"stage-button"}>
+        Stage All Text
+      </button>
+      <div className="page">{panels}</div>
     </div>
   );
 }
@@ -179,54 +140,66 @@ export function ScriptPanel() {
     console.log(`looking for page index: ${e.detail}`);
     setLineQueue(theDoc.linesForPage(e.detail));
     setPageData(theDoc.pageData[e.detail]);
-    setCurLine(0)
-  }
-  // send the next line and update queue state only if autoplace is currently active
-  function dispatchNextLine() {
+    setCurLine(0);
+    // on a new display page, reset the place queue to the first line of the new page
     if (autoplaceActive) {
-      console.log(
-        "setting Next Line: " + JSON.stringify(lineQueue[curLine])
-      );
-      // fire placeQueueUpdate to notify display to highlight next line.
-      const e = new CustomEvent("placeQueueUpdate", {
-        detail: lineQueue[curLine + 1], // send NEXT line in queue, not this one
+      const q = new CustomEvent("placeQueueUpdate", {
+        detail: {
+          pageRefresh: true,
+        },
       });
-      console.log(`firing placeQueueUpdate event with ${JSON.stringify(lineQueue[curLine + 1])}`)
+      document.dispatchEvent(q);
+    }
+  }
 
-      document.dispatchEvent(e);
-
-      placeLineInINDDTextFrame(lineQueue[curLine]);
-      // if we've reached the end of our list of text lines to be placed,
-      // reset to the first one
-      if (curLine >= lineQueue.length) {
-        setCurLine(0)
-      } else { // otherwise increment to the next one
-        setCurLine(curLine + 1)
+  // dispatchNext Line gets called under two circumstances, and its behavior in each
+  // case must differ.
+  // if it's being called as an INDD-originating afterSelectionChanged event listener, we want to
+  // place the text into the newly-selected text box and advance the state of both the place queue
+  // and the React props that indicate the currently highlit line.
+  // if it's being called from updateWithNewPage, we need to refresh the place queue to start at the first
+  // element of the lines for the new page, and refresh the React props for highlighting
+  // It's asynchronous in order to avoid a race condition with INDD's firing of 
+  // afterSelectionChanged events
+  const dispatchNextLine = async function (incoming_e) {
+    let goodSelectionStatusPending = selectionIsNotEmpty();
+    let goodSelectionStatus = await goodSelectionStatusPending;
+    // console.log(`BUDDY, we have selected something: ${goodSelectionStatus}`)
+    if (autoplaceActive && goodSelectionStatus) {
+      if (incoming_e.appId === "IDSN") {
+        console.log("setting next line: " + JSON.stringify(lineQueue[curLine]));
+        // fire placeQueueUpdate to notify display to highlight next line.
+        // actually place text in line
+        placeLineInINDDTextFrame(lineQueue[curLine]);
+        // if we've reached the end of our list of text lines to be placed,
+        // reset to the first one
+        if (curLine >= lineQueue.length) {
+          setCurLine(0);
+        } else {
+          // otherwise increment to the next one
+          setCurLine(curLine + 1);
+        }
+      }
+      if (incoming_e.pageRefresh) {
+        setCurLine(0);
       }
     }
-  }
+  };
 
   function togglePlaceQueue() {
-    console.log(
-      `caught autoplace toggle event. autoPlace was: ${autoplaceActive}`
-    );
-    // if autoplace isn't active, that means it's about to become active, so we should clear the
-    // current INDD selection and pick the selection tool
+    clearINDDSelection();
+    activateINDDSelectionTool();
+    // if autoplace isn't active, that means it's about to become active (at the end of this function),
+    // so we should clear the current INDD selection, pick the selection tool, and set the
+    // afterSelectionChanged event listener
     if (!autoplaceActive) {
-      // fire placeQueueUpdate to start line highlighting
-      const e = new CustomEvent("placeQueueUpdate", {
-        detail: lineQueue[curLine], // send first line in queue
-      });
-      document.dispatchEvent(e);
-      // clear INDD selection 
-      clearINDDSelection();
+      // clear INDD selection and pick selection tool
+      // clearINDDSelection();
+      // activateINDDSelectionTool();
+      setAutoplaceActive(true);
     } else {
-      const e = new CustomEvent("placeQueueUpdate", {
-        detail: { id: null }, // send nonce so all matches fail and nothing is marked as next
-      });
-      document.dispatchEvent(e);
+      setAutoplaceActive(false);
     }
-    setAutoplaceActive(!autoplaceActive);
   }
 
   useEffect(() => {
@@ -236,31 +209,46 @@ export function ScriptPanel() {
     registerPageCheck();
     // add listener for autoplaceStateChange, which will activate the autoplace queue when
     // the new state is true.
-    document.addEventListener("autoplaceToggleFired", togglePlaceQueue);
-    csInterface.addEventListener("afterSelectionChanged", dispatchNextLine);
+    //document.addEventListener("autoplaceToggleFired", togglePlaceQueue);
+    document.addEventListener("placeQueueUpdate", dispatchNextLine);
+    registerSelectionCheck(dispatchNextLine);
 
     return () => {
       // cleanup function; React calls this when the component unmounts
       document.removeEventListener("onNewDisplayPage", updateWithNewPage);
-      document.removeEventListener("autoplaceToggleFired", togglePlaceQueue);
-      csInterface.removeEventListener(
-        "afterSelectionChanged",
-        dispatchNextLine
-      );
+      //document.removeEventListener("autoplaceToggleFired", togglePlaceQueue);
+      document.removeEventListener("placeQueueUpdate", dispatchNextLine);
+      unRegisterSelectionCheck(dispatchNextLine);
       unRegisterPageCheck();
     };
   });
   if (pageData) {
     return (
       <div>
-        <AutoplaceToggle autoplaceActive={autoplaceActive} />
-        <Page data={pageData} />
+        <button
+          className={
+            autoplaceActive
+              ? "autoplace-toggle-on"
+              : "autoplace-toggle-off"
+          }
+          id="autoplace-toggle-button"
+          onClick={togglePlaceQueue}
+        >
+          {autoplaceActive
+            ? "Deactivate Autoplace"
+            : "Activate autoplace"}
+        </button>
+        {/* <AutoplaceToggle autoplaceActive={autoplaceActive} /> */}
+        <Page
+          data={pageData}
+          lineQueue={lineQueue}
+          nextLineID={autoplaceActive ? lineQueue[curLine].id : null}
+        />
       </div>
     );
   } else {
     return (
       <div>
-        <AutoplaceToggle />
         <div className="no-data">No script data for this page found.</div>
       </div>
     );
