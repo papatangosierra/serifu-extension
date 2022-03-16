@@ -5,31 +5,27 @@ import { ScriptPanel } from "./components/script-panel.jsx";
 import { StyleMenuPanel } from "./components/setup-panel.jsx";
 import { SerifuDoc } from "./doc.js";
 import { serifuText } from "./components/test-data.js";
-import { paragraphStyles, currentPage, testLink } from "./interface.js";
 
-export const theDoc = new SerifuDoc(serifuText);
+// function importDataFromFile() {
+//   // let newScriptState
+//   console.log("attempting import...");
+//   const reader = new FileReader();
+//   const importFile = id("import").files[0]; // select the first file from the input widget
+//   let myDoc;
+//   console.log("file size: " + importFile.size);
+//   reader.onload = () => {
+//     // when file is loaded
+//     console.log("reader.onload triggered");
+//     myDoc = new SerifuDoc(reader.result);
+//     // have Indesign show an alert to grab focus
+//     // csInterface.evalScript('alert("Script data imported.")');
+//   };
+//   reader.readAsText(importFile);
+//   console.log("attempting to read as text");
+//   return myDoc;
+// }
 
-function QueueTestButton() {
-  return (
-    <button
-      onClick={() => {
-        console.log(
-          `firing place queue update: ${JSON.stringify(textLines[0])}`
-        );
-        const e = new CustomEvent("placeQueueUpdate", {
-          detail: textLines.shift(),
-        });
-        document.dispatchEvent(e);
-      }}
-    >
-      Test Queue Advance
-    </button>
-  );
-}
-
-function LinkTestButton() {
-  return <button onClick={testLink}>Test INDD Link</button>;
-}
+export const theDoc = importDataFromFile();
 
 function App() {
   return (
@@ -40,8 +36,6 @@ function App() {
       </TabList>
       <TabPanel>
         <ScriptPanel />
-        <QueueTestButton />
-        <LinkTestButton />
       </TabPanel>
       <TabPanel>
         <StyleMenuPanel />

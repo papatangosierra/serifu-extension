@@ -71,7 +71,7 @@ export function placeLineInINDDTextFrame(nextLine) {
   csInterface.evalScript(`placeNextLine(${JSON.stringify(nextLine)})`);
 }
 
-export function placeAllTextForPage(pageData) {
+export function stageAllTextForPage(pageData) {
   console.log(
     `placing all text for current page with data: ${JSON.stringify(
       pageData,
@@ -152,22 +152,22 @@ export function unRegisterPageCheck() {
 
 // Style setting functions
 
+// export function getINDDGrafStyles() {
+//   // console.log("asking for paragraph styles");
+//   csInterface.evalScript("getDocParagraphStyles();", (response) => {
+//     const grafStyles = JSON.parse(response);
+//     // console.log("got styles: " + JSON.stringify(grafStyles));
+//     const e = new CustomEvent("grafStylesFetched", { detail: grafStyles });
+//     document.dispatchEvent(e);
+//   });
+// }
+
 export function getINDDGrafStyles() {
-  // console.log("asking for paragraph styles");
-  csInterface.evalScript("getDocParagraphStyles();", (response) => {
-    const grafStyles = JSON.parse(response);
-    // console.log("got styles: " + JSON.stringify(grafStyles));
-    const e = new CustomEvent("grafStylesFetched", { detail: grafStyles });
-    document.dispatchEvent(e);
-  });
-}
-
-export function registerStyleCheck() {
-  styleCheck = setInterval(getINDDGrafStyles, 2000);
-}
-
-export function unRegisterStyleCheck() {
-  clearInterval(styleCheck);
+  return new Promise((resolve, reject) => {
+    csInterface.evalScript("getDocParagraphStyles();", (response) => {
+      resolve(JSON.parse(response));
+    });
+  })
 }
 
 // linkScriptNameToParagraphStyle calls the similarly-named function in the host jsx script with the given arguments, linking a style in the script to a Paragraph Style in the INDD doc

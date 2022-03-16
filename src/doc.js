@@ -37,6 +37,8 @@ export class SerifuDoc {
     this.text = docText;
     this.sources = [];
     this.styles = [];
+    this.sourceMap = {};
+    this.styleMap = {};
     let cursor = parser.parse(this.text).cursor();
 
     // go through the parse tree and extract unique Sources and Styles.
@@ -48,14 +50,17 @@ export class SerifuDoc {
       ) {
         // add the Source to the list
         this.sources.push(this.text.substring(cursor.from, cursor.to));
+        // list the Source as a key in our SourceMap (for mapping to INDD graf styles)
+        this.sourceMap[this.text.substring(cursor.from, cursor.to)] = 0;
       }
       if (
-        // if we find a Style token, and if its contents aren't already in our array of Sources
+        // if we find a Style token, and if its contents aren't already in our array of Styles
         cursor.type.name === "Style" &&
         !this.styles.includes(this.text.substring(cursor.from, cursor.to))
       ) {
-        // add the Source to the list
+        // add the Style to the list
         this.styles.push(this.text.substring(cursor.from, cursor.to));
+        this.styleMap[this.text.substring(cursor.from, cursor.to)] = 0;
       }
     } while (cursor.next());
 

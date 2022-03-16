@@ -13,7 +13,7 @@ import {
   clearINDDSelection,
   activateINDDSelectionTool,
   selectionIsNotEmpty,
-  placeAllTextForPage,
+  stageAllTextForPage,
   stageAllTextForDocument,
 } from "../interface.js";
 
@@ -106,7 +106,7 @@ function Page(props) {
   ));
 
   function stagePageText() {
-    placeAllTextForPage(data);
+    stageAllTextForPage(props.data);
   }
 
   function stageAllText() {
@@ -209,14 +209,12 @@ export function ScriptPanel() {
     registerPageCheck();
     // add listener for autoplaceStateChange, which will activate the autoplace queue when
     // the new state is true.
-    //document.addEventListener("autoplaceToggleFired", togglePlaceQueue);
     document.addEventListener("placeQueueUpdate", dispatchNextLine);
     registerSelectionCheck(dispatchNextLine);
 
     return () => {
       // cleanup function; React calls this when the component unmounts
       document.removeEventListener("onNewDisplayPage", updateWithNewPage);
-      //document.removeEventListener("autoplaceToggleFired", togglePlaceQueue);
       document.removeEventListener("placeQueueUpdate", dispatchNextLine);
       unRegisterSelectionCheck(dispatchNextLine);
       unRegisterPageCheck();
@@ -242,14 +240,14 @@ export function ScriptPanel() {
         <Page
           data={pageData}
           lineQueue={lineQueue}
-          nextLineID={autoplaceActive ? lineQueue[curLine].id : null}
+          nextLineID={(autoplaceActive && lineQueue[curLine]) ? lineQueue[curLine].id : null}
         />
       </div>
     );
   } else {
     return (
       <div>
-        <div className="no-data">No script data for this page found.</div>
+        <div className="no-data">No script data loaded.</div>
       </div>
     );
   }

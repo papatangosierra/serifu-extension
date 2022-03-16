@@ -6,13 +6,14 @@ import {
   registerStyleCheck,
   unRegisterStyleCheck,
   linkScriptNameToGrafStyle,
+  getINDDGrafStyles,
 } from "../interface.js";
 import { theDoc } from "../app.jsx";
 
 // This component is just one item in a menu of available InDesign styles
 function MenuItem(props) {
   return (
-    <option value={props.id} name="{props.name}">
+    <option value={props.id} name={props.name}>
       {props.name}
     </option>
   );
@@ -27,6 +28,7 @@ function MenuItem(props) {
 */
 // props will contain a "type" (either "Source" or "Script")
 function GrafStyleSelectMenu(props) {
+  const [ selected, setSelected ] = useState(props.smap[props.name]);
   const menuItems = props.grafStyles.map((el) => {
     return (
       <MenuItem
@@ -37,17 +39,26 @@ function GrafStyleSelectMenu(props) {
     );
   });
 
+  useEffect(() => {
+    if (props.type === "style") {
+      theDoc.styleMap[props.name] = selected;
+    } else {
+      theDoc.sourceMap[props.name] = selected;
+    }
+  });
+
   return (
     <select
       onChange={(e) => {
-        console.log();
         linkScriptNameToGrafStyle(
           props.type,
           props.name, // in-script name of newly selected style
           e.target.value // numerical ID, per INDD, of newly selected style
         );
+        setSelected(e.target.value);
       }}
       name={props.type}
+      value={selected} // the value prop specifies which option is currently selected
     >
       {" "}
       {menuItems}{" "}
@@ -58,23 +69,38 @@ function GrafStyleSelectMenu(props) {
 function StyleToGrafStyle(props) {
   const allStyleMenus = theDoc.getStyles.map((el) => {
     return (
-      <div key={el} className="style-select-menu">
-        <label htmlFor={`style-${el}-select`} id={`style-${el}-select`}>
-          {el}:
-        </label>
-        <GrafStyleSelectMenu
-          type="style"
-          name={el}
-          grafStyles={props.grafStyles}
-        />
-      </div>
+      <tr key={el} className="style-select-menu">
+        <td>
+          <label htmlFor={`style-${el}-select`} id={`style-${el}-select`}>
+            {el}
+          </label>
+        </td>
+        <td>
+          <GrafStyleSelectMenu
+            type="style"
+            name={el}
+            grafStyles={props.grafStyles}
+            smap={theDoc.styleMap}
+          />
+        </td>
+      </tr>
     );
   });
 
   return (
     <div className="section">
-      <span>Select Paragraph Styles to apply to styles found in script:</span>
-      {allStyleMenus}
+      <div className="style-menu-description">
+        Select InDesign Paragraph Styles to apply to styles found in script:
+      </div>
+      <table>
+        <tbody>
+        <tr>
+          <th>Script Style</th>
+          <th>Paragraph Style</th>
+        </tr>
+        {allStyleMenus}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -82,43 +108,57 @@ function StyleToGrafStyle(props) {
 function SourceToGrafStyle(props) {
   const allSourceMenus = theDoc.getSources.map((el) => {
     return (
-      <div key={el} className="source-select-menu">
-        <label htmlFor={`source-${el}-select`} id={`source-${el}-select`}>
-          {el}:
-        </label>
-        <GrafStyleSelectMenu
-          type="source"
-          name={el}
-          grafStyles={props.grafStyles}
-        />
-      </div>
+      <tr key={el} className="source-select-menu">
+        <td>
+          <label htmlFor={`source-${el}-select`} id={`source-${el}-select`}>
+            {el}
+          </label>
+        </td>
+        <td>
+          <GrafStyleSelectMenu
+            type="source"
+            name={el}
+            grafStyles={props.grafStyles}
+            smap={theDoc.sourceMap}
+          />
+        </td>
+      </tr>
     );
   });
 
   return (
     <div className="section">
-      <span>Select Paragraph Styles to apply to sources found in script:</span>
-      {allSourceMenus}
+      <div className="style-menu-description">
+        Select InDesign Paragraph Styles to apply to sources found in script:
+      </div>
+      <table>
+        <tbody>
+        <tr>
+          <th>Script Source</th>
+          <th>Paragraph Style</th>
+        </tr>
+        {allSourceMenus}
+        </tbody>
+      </table>
     </div>
   );
 }
 
 export function StyleMenuPanel() {
   const [grafStyles, setGrafStyles] = useState([]);
-  // update our list of paragraph styles when the event fires
-  const refreshGrafStyles = (e) => {
-    console.log(`refreshing graf styles: ${e.detail}`);
-    setGrafStyles(e.detail);
-  };
+
   useEffect(() => {
-    document.addEventListener("grafStylesFetched", refreshGrafStyles);
-    registerStyleCheck();
-    return () => {
-      // cleanup function
-      document.removeEventListener("grafStylesFetched", refreshGrafStyles);
-      unRegisterStyleCheck();
+    const refreshGrafStyles = async function () {
+      console.log(`refreshing graf styles`);
+      let fetchGrafStylesPending = getINDDGrafStyles();
+      let fetchGrafStyles = await fetchGrafStylesPending;
+      setGrafStyles(fetchGrafStyles);
     };
-  });
+
+    refreshGrafStyles(); // call our async function to get currently defined graf styles from INDD
+
+    return () => {} // cleanup
+  }, []);
   return (
     <div>
       <SourceToGrafStyle grafStyles={grafStyles} />
