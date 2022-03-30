@@ -18,8 +18,16 @@ import {
 } from "../interface.js";
 
 function Line(props) {
-  // const content = props.content;
-  const [lineIsNext, setLineIsNext] = useState(props.lineIsNext);
+  // we're using the ref hook so highlit lines can scroll themselves into view
+  const lineRef = useRef(null);
+
+  // if we're the next line, scroll into view
+  useEffect(() => {
+    if (props.lineIsNext && lineRef.current) {
+      lineRef.current.scrollIntoView({behavior:"smooth"});
+    }
+  }, [props.lineIsNext]) // putting lineIsNext here makes sure we'll run this effect any time it changes.
+
   // build our dialogue line from the content prop
   const lineContent = props.content.map((el, i) => {
     if (el.emphasis === "none") {
@@ -51,7 +59,7 @@ function Line(props) {
   });
 
   return (
-    <div className={props.lineIsNext ? "line-next" : "line"}>
+    <div className={props.lineIsNext ? "line-next" : "line"} ref={lineRef}>
       <div className="line-source">{props.source}</div>
       {props.style ? <div className="line-style">{props.style}</div> : null}
       <div className="line-content">{lineContent}</div>
@@ -262,7 +270,7 @@ export function ScriptPanel(props) {
   });
   if (pageData) {
     return (
-      <div>
+      <div className="sticky-buttons">
         <button
           className={
             autoplaceActive

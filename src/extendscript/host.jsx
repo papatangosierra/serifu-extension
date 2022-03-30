@@ -5,6 +5,7 @@
 
 // THIS GIVE US JSON, WHICH WE DEFINITELY NEED.
 #include "json2.js";
+#include "KTUlib.jsx";
 
 var theDoc = app.activeDocument
 var thePages = app.activeDocument.pages
@@ -12,9 +13,18 @@ var theLayers = app.activeDocument.layers
 var theMaster = app.activeDocument.masterSpreads.itemByName('A-Master')
 var theTool = app.toolBoxTools;
 
-// #include "KTUlib.jsx";
+// Set up window to use for progress bar when reversing pages, but don't display yet.
+var w = new Window ("palette"); // must be defined at top level
+var myMessage = w.add ("statictext"); 
+myMessage.text = "Reversing page order...";
 
-// alert("hello")
+function doAsUndoable(f, description) {
+  try { 
+    KTUDoScriptAsUndoable(f, description)
+  } catch(err) {
+    alert("Error: " + err.description) 
+  }
+}
 
 // global variable to hold currently queued lines for placing
 // global lists to hold script style associations
@@ -186,22 +196,6 @@ function placeAllTextForPage(pageData, pageNum) {
   theDoc.viewPreferences.rulerOrigin = oldOrigin;
 }
 
-
-// receive text from panel and turn on Event Listeners 
-// The received text is an array of objects structured thus:
-// {
-//     "type": "Text" or "Sfx",
-//     "source": string containing source string: character, caption, etc,
-//     "style": string containing translator-defined line style,
-//     "content": string containing an array of objects representing the line's content.
-// }
-/* The content array is composed of objects structured thus:
- {
-    emphasis: "none" or "Ital" or "Bold" or "BoldItal",
-    text: "A string with the given emphasis",
-}
-*/
-
 // clearSelection deselects everything. We use this function before setting the OnSelectionChanged
 // event listener, because we want to make sure the next selection change will reliably indicate
 // a directive from the use to place text in the selected textFrame
@@ -261,11 +255,51 @@ function linkScriptNameToParagraphStyle(linkType, name, id) {
   //alert("style keys: " + JSON.stringify(styleKeys) + "source keys: " + JSON.stringify(sourceKeys))
 }
 
-// panicButton turns off the event listeners, clears the currentline array, and removes all style associations
-function panicButton() {
-  styleKeys = {};
-  sourceKeys = {};
-  currentLines = [];
-  theDoc.removeEventListener(Event.AFTER_SELECTION_CHANGED, placeNextLine);
-  alert("Don't panic!\nThe selection event listener has been cleared, the style links broken, and the current line queue flushed. You may want to save your work now.")
+
+
+// Run KTUToggleBindingDirection on the current document, as undoable, with error catching
+function toggleBindingDirectionFunc() {
+  KTUToggleBindingDirection(theDoc)
+}
+
+function toggleBindingDirection() {
+  doAsUndoable(toggleBindingDirectionFunc, "Toggle Binding Direction");
+}
+
+// reverse order of all pages
+var reverseSpreadOrderFunc = function () {
+  // first, lock all items in the document in place
+  KTULockAllItems(theDoc)
+
+  if (!w.pbar) { // if the progress bar doesn't exist
+      w.pbar = w.add('progressbar', undefined, 0, app.activeDocument.spreads.length); 
+  } else {
+      w.pbar.value = 0;
+      w.update();
+  }
+  w.pbar.preferredSize.width = 300;
+  w.show(); // Show our progress bar window
+  var refpage = 0;
+  for (var i = 0; i < app.activeDocument.spreads.length; i++) { // move by spread, not page, so as not to fuck up formatting
+      if (i != 0) {
+          targetpage = app.activeDocument.spreads[i];
+          targetpage.move(LocationOptions.BEFORE, refpage);
+          refpage = targetpage;
+      } else {
+          refpage = app.activeDocument.spreads[i];
+      }
+      w.pbar.value = i + 1;
+      w.update(); // Have to call this, or the progress bar won't update.
+  }
+  w.close();
+  
+  // then reverse the binding direction from wherever it was
+  KTUToggleBindingDirection(theDoc)
+
+  // then unlock all items in the document
+  KTUUnLockAllItems(theDoc)
+}
+
+function reverseSpreadOrder() {
+  doAsUndoable(reverseSpreadOrderFunc, "Reverse Spread Order");
 }

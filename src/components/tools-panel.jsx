@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import {
-
+  toggleBindingDirection,
+  reverseSpreadOrder,
 } from "../interface.js";
 
 export const ToolsPanel = function () {
@@ -10,17 +11,17 @@ export const ToolsPanel = function () {
       <div className="section">
         <h2>Setup & Pages</h2>
         <h3>Binding & Reading Direction</h3>
-        <button>Reverse Binding Direction</button><br />
-        <button>Reverse Document Page Order</button><br />
-        <h3>Document Setup</h3>
+        <button onClick={toggleBindingDirection}>Reverse Binding Direction</button><br />
+        <button onClick={reverseSpreadOrder}>Reverse Document Page Order</button><br />
+        {/* <h3>Document Setup</h3>
         <button>Auto-Place Artwork From Folder</button><br />
         <button>Create Master Page Art Frames</button><br />
         <button>Add Guides & Page Numbers</button><br />
-        <button>Create Basic Paragraph Styles</button><br />
+        <button>Create Basic Paragraph Styles</button><br /> */}
 
 
       </div>
-      <div className="section">
+      {/* <div className="section">
         <h2>Items</h2>
         <h3>Layout Adjustment</h3>
         <button>Match Art Frame to Page Size</button><br />
@@ -33,7 +34,7 @@ export const ToolsPanel = function () {
         <button>Unlock All Items</button><br />
         <button>Find Next Empty Text Frame</button><br />
         <button>Export Current Page As PDF</button><br />
-      </div>
+      </div> */}
     </>
   );
 }

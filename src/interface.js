@@ -201,3 +201,13 @@ export function linkScriptNameToGrafStyle(linkType, name, id) {
   // console.log(`linking ${linkType} ${name} to paragraph style id ` + id);
   csInterface.evalScript("linkScriptNameToParagraphStyle(" + params + ")");
 }
+
+// Tools Panel Functions
+
+export function toggleBindingDirection() {
+  csInterface.evalScript("toggleBindingDirection()")
+}
+
+export function reverseSpreadOrder() {
+  csInterface.evalScript("reverseSpreadOrder()")
+}
