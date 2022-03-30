@@ -13,7 +13,8 @@ import {
   selectionIsNotEmpty,
   stageAllTextForPage,
   stageAllTextForDocument,
-  createSfxLine
+  createSfxLine,
+  activateSerifuPanel,
 } from "../interface.js";
 
 function Line(props) {
@@ -154,7 +155,7 @@ export function ScriptPanel(props) {
     }
   }
 
-  // dispatchNext Line gets called under two circumstances, and its behavior in each
+  // dispatchNextLine gets called under two circumstances, and its behavior in each
   // case must differ.
   // if it's being called as an INDD-originating afterSelectionChanged event listener, we want to
   // place the text into the newly-selected text box and advance the state of both the place queue
@@ -173,8 +174,8 @@ export function ScriptPanel(props) {
         // fire placeQueueUpdate to notify display to highlight next line.
         // actually place text in line
         placeLineInINDDTextFrame(lineQueue[curLine]);
-        // if we've reached the end of our list of text lines to be placed,
-        // reset to the first one
+        // bring Serifu panel back to focus (there is currently no programmatic way to do this)
+        // activateSerifuPanel();
         if (curLine >= lineQueue.length) {
           setCurLine(0);
         } else {
@@ -187,6 +188,39 @@ export function ScriptPanel(props) {
       }
     }
   };
+
+  // advanceToNextLine is called when the space bar is pressed. It skips to the next item
+  // in the line queue, unless we're at the end, in which case it wraps around to the beginning
+  function advanceToNextLine() {
+    if (curLine >= lineQueue.length) {
+      setCurLine(0);
+    } else {
+      setCurLine(curLine + 1);
+    }
+  }
+
+  // reverseToPreviousLine is called when shift+space is pressed. It returns to the previous item in
+  // the line queue, unless we're at the beginning, in which case it wraps around to the end.
+  function reverseToPreviousLine() {
+    if (curLine === 0) {
+      setCurLine(lineQueue.length - 1)
+    } else {
+      setCurLine(curLine - 1)
+    }
+  }
+  
+  // handleKeyEvents is called by the event listener set for the keydown event. It checks which keys
+  // were pressed and calls the appropriate function
+  function handleKeyEvents(e) {
+    if ( autoplaceActive && e.code === "Space" && !e.shiftKey) { // space with no shift
+      e.preventDefault();
+      advanceToNextLine();
+    }
+    if ( autoplaceActive && e.code === "Space" && e.shiftKey) { // shift+space
+      e.preventDefault();
+      reverseToPreviousLine();
+    }
+  }
 
   function togglePlaceQueue() {
     clearINDDSelection();
@@ -212,12 +246,16 @@ export function ScriptPanel(props) {
     // add listener for autoplaceStateChange, which will activate the autoplace queue when
     // the new state is true.
     document.addEventListener("placeQueueUpdate", dispatchNextLine);
+    // add listener for keypress events
+    document.addEventListener("keydown", handleKeyEvents);
+
     registerSelectionCheck(dispatchNextLine);
 
     return () => {
       // cleanup function; React calls this when the component unmounts
       document.removeEventListener("onNewDisplayPage", updateWithNewPage);
       document.removeEventListener("placeQueueUpdate", dispatchNextLine);
+      document.removeEventListener("keydown", handleKeyEvents);
       unRegisterSelectionCheck(dispatchNextLine);
       unRegisterPageCheck();
     };

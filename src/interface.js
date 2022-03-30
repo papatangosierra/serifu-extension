@@ -23,13 +23,27 @@ export const characterStyles = [
   { name: "BoldItal", id: 3 },
 ];
 
-export const currentPage = 1;
-
 // instantiate our interface to the host script
 export const csInterface = new CSInterface();
 
-// helper function to return a promise object from a CSInterface call
+export const currentPage = 1;
 
+// object describing our keyboard shortcuts
+
+let keyboardEvents = [{
+  "keyCode": 49, // space key
+},
+{
+  "keyCode": 49, // space key w/ shift down
+  "shiftKey": true,
+}]
+
+// register our interest in keyboard events for our shortcuts.
+console.log(`registering interest in key events: ${JSON.stringify(keyboardEvents)}`)
+csInterface.registerKeyEventsInterest(JSON.stringify(keyboardEvents))
+
+
+// helper function to return a promise object from a CSInterface call
 function runEvalScript(script) {
   console.log(`helper function runEvalScript called with: ${script}`);
   return new Promise((resolve, reject) => {
@@ -39,6 +53,13 @@ function runEvalScript(script) {
 
 export function testLink() {
   csInterface.evalScript('alert("testing panel link")');
+}
+
+// setSerifuPanelVisible sets the "visible" attribute on the Serifu panel object to "true",
+// hopefully bringing it to the front. 
+export function activateSerifuPanel() {
+  console.log('attempting to bring Serifu panel to the foreground');
+  csInterface.requestOpenExtension("com.serifu.panel", "");
 }
 
 /* checkDisplayPage is called every second or so. It looks to see whether the 

@@ -34,12 +34,12 @@ function createSfxLine(sfxText) {
   }
 
   var myFrame = page.textFrames.add({
-    // take a bit off the bounds of the placed box to give it breathing room next to the others
+    // place SFX in center of page, roughly
     geometricBounds: [
-      yPageSize / 2, 
-      xPageSize / 2, 
-      (yPageSize / 2) + 10, 
-      (xPageSize / 2) + 10, 
+      (yPageSize / 2) - 5, 
+      (xPageSize / 2) - 5, 
+      (yPageSize / 2) + 5, 
+      (xPageSize / 2) + 5, 
       ],
     strokeWidth: 0,
     label: "SFX"
@@ -269,6 +269,3 @@ function panicButton() {
   theDoc.removeEventListener(Event.AFTER_SELECTION_CHANGED, placeNextLine);
   alert("Don't panic!\nThe selection event listener has been cleared, the style links broken, and the current line queue flushed. You may want to save your work now.")
 }
-
-
-// placeAllTextForPage(['hello'], "3")

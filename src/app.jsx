@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import { ScriptPanel } from "./components/script-panel.jsx";
 import { StyleMenuPanel } from "./components/setup-panel.jsx";
+import { ToolsPanel } from "./components/tools-panel.jsx";
 import { SerifuDoc } from "./doc.js";
 import { currentDisplayPage }  from "./interface.js";
 
@@ -64,7 +65,7 @@ function App() {
         <StyleMenuPanel/>
       </TabPanel>
       <TabPanel>
-        <p>toolz go here</p>
+        <ToolsPanel />
       </TabPanel>
     </Tabs>
   );
