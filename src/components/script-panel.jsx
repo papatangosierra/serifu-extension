@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { testData } from "./test-data.js";
-import { theDoc } from "../app.jsx";
 import {
   csInterface,
   currentDisplayPage,
@@ -15,6 +13,7 @@ import {
   selectionIsNotEmpty,
   stageAllTextForPage,
   stageAllTextForDocument,
+  createSfxLine
 } from "../interface.js";
 
 function Line(props) {
@@ -60,7 +59,10 @@ function Line(props) {
 }
 
 function Sfx(props) {
-  return <div className="sfx">{props.text}</div>;
+  function placeSfxLine() {
+    createSfxLine(props.text);
+  }
+  return <div className="sfx" onClick={placeSfxLine}>{props.text}</div>;
 }
 
 function Note(props) {
@@ -130,16 +132,16 @@ function Page(props) {
 It sets up an event listener for the "newScriptPage" event, which will contain the data for a new script page to be rendered and displayed.
 */
 
-export function ScriptPanel() {
-  const [lineQueue, setLineQueue] = useState(theDoc.linesForPage(0));
+export function ScriptPanel(props) {
+  const [lineQueue, setLineQueue] = useState(props.theDoc.linesForPage(0));
   const [curLine, setCurLine] = useState(0);
-  const [pageData, setPageData] = useState(theDoc.pageData[0]);
+  const [pageData, setPageData] = useState(props.theDoc.pageData[0]);
   const [autoplaceActive, setAutoplaceActive] = useState(false);
 
   function updateWithNewPage(e) {
     console.log(`looking for page index: ${e.detail}`);
-    setLineQueue(theDoc.linesForPage(e.detail));
-    setPageData(theDoc.pageData[e.detail]);
+    setLineQueue(props.theDoc.linesForPage(e.detail));
+    setPageData(props.theDoc.pageData[e.detail]);
     setCurLine(0);
     // on a new display page, reset the place queue to the first line of the new page
     if (autoplaceActive) {
@@ -248,6 +250,7 @@ export function ScriptPanel() {
     return (
       <div>
         <div className="no-data">No script data loaded.</div>
+        <button onClick={loadScriptData}>Load Serifu Script File</button>
       </div>
     );
   }

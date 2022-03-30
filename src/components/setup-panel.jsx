@@ -8,7 +8,7 @@ import {
   linkScriptNameToGrafStyle,
   getINDDGrafStyles,
 } from "../interface.js";
-import { theDoc } from "../app.jsx";
+import {externalDoc as theDoc} from "../app.jsx";
 
 // This component is just one item in a menu of available InDesign styles
 function MenuItem(props) {
@@ -144,7 +144,7 @@ function SourceToGrafStyle(props) {
   );
 }
 
-export function StyleMenuPanel() {
+export function StyleMenuPanel(props) {
   const [grafStyles, setGrafStyles] = useState([]);
 
   useEffect(() => {

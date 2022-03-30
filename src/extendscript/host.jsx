@@ -21,13 +21,36 @@ var theTool = app.toolBoxTools;
 var styleKeys = {};
 var sourceKeys = {};
 
-// basic dimensions and position of auto-placed text box;
-// we'll offset this by various values to derive the final placement
-// var defaultBounds = [0, 36, ];
+// createSfxLine creates a single text box with a paragraph style of "SFX" and places it in the center of
+// the page
+function createSfxLine(sfxText) {
+  app.scriptPreferences.measurementUnit = MeasurementUnits.PICAS;
+  var page = app.activeWindow.activePage;
+  var xPageSize = theMaster.pages[0].bounds[3] - theMaster.pages[0].bounds[1];
+  var yPageSize = theMaster.pages[0].bounds[2] - theMaster.pages[0].bounds[0];
+  // if there's not already a style named SFX, create it.
+  if (!theDoc.paragraphStyles.itemByName("SFX").isValid) {
+    theDoc.paragraphStyles.add( {name: "SFX" } )
+  }
+
+  var myFrame = page.textFrames.add({
+    // take a bit off the bounds of the placed box to give it breathing room next to the others
+    geometricBounds: [
+      yPageSize / 2, 
+      xPageSize / 2, 
+      (yPageSize / 2) + 10, 
+      (xPageSize / 2) + 10, 
+      ],
+    strokeWidth: 0,
+    label: "SFX"
+  });
+  myFrame.contents = sfxText; // place SFX text in frame
+  // apply style
+  myFrame.paragraphs.everyItem().appliedParagraphStyle = theDoc.paragraphStyles.itemByName("SFX");
+}
 
 // placeNextLine places the next line in the selected textbox,
 // shifts the line queue, and returns the new state of the queue
-
 function placeNextLine(nextLine) {
   //alert('attempting to place: ' + JSON.stringify(nextLine));
   if (theDoc.selection[0] instanceof TextFrame) //  if the new selection is a textFrame and the only thing selected

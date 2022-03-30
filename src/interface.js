@@ -1,12 +1,11 @@
 // interface.js holds all the code that interfaces with the InDesign scripting environment. Any state coming from InDesign comes through here.
 
-import { theDoc } from "./app.jsx";
+import {externalDoc as theDoc} from "./app.jsx";
 
 // top-level state. There might be a better way to do this than global state, but I'm not sure what it is.
 export let currentDisplayPage = 1;
 
 let pageCheck = null; // the interval for checkDisplayPage
-let styleCheck = null; // the interval for checking for new styles
 // List of Paragraph and Character styles
 
 export const paragraphStyles = [
@@ -69,6 +68,11 @@ function checkDisplayPage() {
 export function placeLineInINDDTextFrame(nextLine) {
   console.log(`attempting to place: ${JSON.stringify(nextLine)}`);
   csInterface.evalScript(`placeNextLine(${JSON.stringify(nextLine)})`);
+}
+
+export function createSfxLine(sfxText) {
+  console.log(`attempting to create SFX line with: ${sfxText}`);
+  csInterface.evalScript(`createSfxLine("${sfxText}")`);
 }
 
 export function stageAllTextForPage(pageData) {
