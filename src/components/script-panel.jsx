@@ -126,12 +126,14 @@ function Page(props) {
 
   return (
     <div className="section">
+      <div id="staging-buttons">
       <button onClick={stagePageText} className={"stage-button"}>
         Stage Page Text
       </button>
       <button onClick={stageAllText} className={"stage-button"}>
         Stage All Text
       </button>
+      </div>
       <div className="page">{panels}</div>
     </div>
   );
@@ -200,7 +202,7 @@ export function ScriptPanel(props) {
   // advanceToNextLine is called when the space bar is pressed. It skips to the next item
   // in the line queue, unless we're at the end, in which case it wraps around to the beginning
   function advanceToNextLine() {
-    if (curLine >= lineQueue.length) {
+    if (curLine === lineQueue.length - 1) {
       setCurLine(0);
     } else {
       setCurLine(curLine + 1);
@@ -270,7 +272,7 @@ export function ScriptPanel(props) {
   });
   if (pageData) {
     return (
-      <div className="sticky-buttons">
+      <div>
         <button
           className={
             autoplaceActive

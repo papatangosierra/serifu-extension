@@ -59,7 +59,9 @@ function App() {
       </TabList>
       <TabPanel>
         <ScriptPanel theDoc={theDoc} />
-        <button onClick={loadScriptData}>Open Serifu File</button>
+        <div id="open-script-file">
+          <button onClick={loadScriptData}>Open Serifu Script...</button>
+        </div>
       </TabPanel>
       <TabPanel>
         <StyleMenuPanel/>
