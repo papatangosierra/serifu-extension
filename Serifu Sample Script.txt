@@ -1,0 +1,51 @@
+# Page 1
+- 1
+Caption: About 20 miles north of Sante Fe, New Mexico...
+Paul: Hi there, and welcome to the Serifu extension for InDesign!
+Paul/Aside: Is this thing on?
+- 2
+Paul: Thanks for giving my little project a try! 
+Paul: I've been working on it for...
+Paul/Big: ...a while.
+- 3
+Caption: ===
+In fact, Paul had been working on the problems that led to Serifu for close to *three years* by this point.
+
+He's probably a little too excited about showing it off.
+===
+* typitty typitty typitty
+* code code code
+
+# Page 2
+- 1
+Paul: So the main idea here is to make it faster and easier to get text into your layout.
+Paul/Aside: Like, a lot faster.
+- 2
+Paul/Bold: Because all that copying and pasting just...
+: really
+/Big: really
+Paul: sucks.
+- 3
+Sign: No copying and no pasting!
+- 4
+Paul: And so does switching back and forth between multiple apps!
+: And worrying whether you're at the right place in the script!
+: And all that messing around with fonts!
+/Aside: And, and, and...
+
+# Page 3
+- 1
+Paul/Big: There's got to be a better way.
+- 2
+Paul: I'm hoping this is a start.
+
+# Page 4
+- 1
+Caption: If Paul was wrong about this, he didn't want to know.
+Paul: Okay that is patently untrue.
+- 2
+: In fact, it's just the opposite: if this isn't making your lettering life easier, I want to know what will!
+/Aside: So you should definitely tell me what you think.
+Caption: Ahem. I stand corrected.
+- 3
+Paul/Big: Because we're just getting started.

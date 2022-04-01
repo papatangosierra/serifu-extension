@@ -190,7 +190,7 @@ export class SerifuDoc {
       }
       if (cursor.type.name === "BlockText") {
         pageStruct = deepPush(pageStruct, {
-          emphasis: "BlockText",
+          emphasis: "none",
           text: this.text.substring(cursor.from + 2, cursor.to - 2), // push text as-is
         });
       }
