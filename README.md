@@ -77,9 +77,9 @@ ILLUSTRATED SCREENSHOT OF THIS
 
 ### Paragraph Style Association
 
-Serifu scripts associate every line of text with a mandatory Source, and an optional Style. A line's Source is most often the name of the character speaking it, but can also be a description of its role on the page, e.g. `Caption` or `Chapter Title`, or an indication of diegetic text like `Sign` or `Poster`.
+Serifu scripts associate every line of text with a mandatory **Source**, and an optional **Style**. A line's Source is most often the name of the character speaking it, but can also be a description of its role on the page, e.g. `Caption` or `Chapter Title`, or an indication of diegetic text like `Sign` or `Menu`.
 
-A line's Style is meant to indicate that the line's text is treated differently from whatever the default for that Source would be. Styles are most frequently used to indicate character dialogue whose text needs to use a different font, like `Aside`, `Screaming`, `Whisper`, etc.
+A line's Style, meanwhile is meant to indicate that the line's text is treated differently from whatever the default for that Source would be. Styles are most frequently used to indicate character dialogue whose text needs to use a different font, like `Aside`, `Screaming`, `Whisper`, etc.
 
 SCREENSHOT OF A LINE WITH SOURCE AND STYLE HERE
 
@@ -88,3 +88,17 @@ When you load a Serifu script, the extension builds a list of every Source and S
 SCREENSHOT OF SETUP TAB
 
 Next to each Source and Style is a selection menu. This menu contains all the paragraph styles currently defined in your InDesign document. When you select a given paragraph style for a given Source or Style, whenever Serifu places text with that Source or Style—either via Autoplace or staging—it will automatically apply the selected paragraph style.
+
+If no paragraph style is chosen for a given Source or Style, the default InDesign style of `[Basic Text Frame]` will be used.
+
+### Inline Styles: Bold, Ital, and BoldItal
+
+Individual lines of text in Serifu may contain sections of bolded, italicized, or bold italicized text. These will be visible as such in the script panel:
+
+SCREENSHOT OF A LINE WITH INLINE STYLED TEXT
+
+When you place a line like this, either via autoplace or staging, Serifu looks for an InDesign character style to apply to them. Specifically, it looks for a character style with the name of the paragraph style it would otherwise apply, followed by the words "Bold", "Ital", or "BoldItal", depending on which type of inline style was applied.
+
+For example, if you've defined a paragraph style called `Basic Caption`, then when Serifu encounters italics in the context of applying the `Basic Caption` paragraph style, it will apply a character style named `Basic Caption Ital`. If that character style doesn't already exist, it is created, then applied.
+
+When Serifu creates character styles to apply like this, it doesn't make any assumptions about how those styles should be defined. In this case, to make `Basic Caption Ital` actually italicize text, you will need to manually edit the character style to display the italic version of the appropriate font.

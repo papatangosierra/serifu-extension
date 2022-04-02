@@ -72,13 +72,33 @@ function placeNextLine(nextLine) {
     // the [-1] index returns an insertion point at the end of the story. (wow, convenient for once)
     story.contents = ""; // clear anything that's already there
     for (var i = 0; i < nextLine.content.length; i++) {
-      // alert('placing line section ' + i + ' of ' + nextLine.content.length)
+      var emphasisStyleName = ""
       if (nextLine.content[i].emphasis != "none") {
-        story.insertionPoints[-1].appliedCharacterStyle = nextLine.content[i].emphasis; // "Bold", "Ital", or "BoldItal"
-        story.insertionPoints[-1].contents = nextLine.content[i].text // place text
+        // cache the name of the emphasis character style we're going to look for.
+        // it's "Paragraph Style Name [space] Emphasis Type", e.g. Dialogue Bold, Caption Ital, Thought BoldItal
+        // If there's a paragraph style associated with this source, cache it
+        if (sourceKeys.hasOwnProperty(nextLine.source)) {
+          emphasisStyleName = theDoc.paragraphStyles.itemByID(sourceKeys[nextLine.source]).name + " " + nextLine.content[i].emphasis;
+        } else { // otherwise, come up with a sensible (?) default
+          emphasisStyleName = "Default " + nextLine.content[i].emphasis;
+        }
+        // then, if we're in a line with a Style applied, override whatever we just did with that,
+        // because Styles take precedence over Sources. 
+        if (styleKeys.hasOwnProperty(nextLine.style)) {
+          emphasisStyleName = theDoc.paragraphStyles.itemByID(styleKeys[nextLine.style]).name + " " + nextLine.content[i].emphasis;
+        }
+        // check for nonexistance of character style for this emphasis + paragraph style combination
+        if (!theDoc.characterStyles.itemByName(emphasisStyleName).isValid) {
+            // if it doesn't exist, create it
+            theDoc.characterStyles.add({
+              name: emphasisStyleName,
+            })
+        }
+        story.insertionPoints[-1].appliedCharacterStyle = emphasisStyleName; // "Bold", "Ital", or "BoldItal"
+        story.insertionPoints[-1].contents = nextLine.content[i].text; // place text
       } else { // there's no emphasis, so just place text
-        story.insertionPoints[-1].appliedCharacterStyle = theDoc.characterStyles[0];
-        story.insertionPoints[-1].contents = nextLine.content[i].text
+        story.insertionPoints[-1].appliedCharacterStyle = theDoc.characterStyles[0]; // use "none" character style
+        story.insertionPoints[-1].contents = nextLine.content[i].text;
       }
     }
     // apply style -- if there is both an applicable source
@@ -111,12 +131,32 @@ function createTextAtBounds(textLine, bounds, page) {
   // iterate over the objects in nextLineText and place them in the story, applying character styles as we go
   // the [-1] index returns an insertion point at the end of the story. (wow, convenient for once)
   for (var i = 0; i < textLine.content.length; i++) {
-    // alert('placing line section ' + i + ' of ' + nextLine.content.length)
+    var emphasisStyleName = ""
     if (textLine.content[i].emphasis != "none") {
-      story.insertionPoints[-1].appliedCharacterStyle = textLine.content[i].emphasis; // "Bold", "Ital", or "BoldItal"
+      // cache the name of the emphasis character style we're going to look for.
+      // it's "Paragraph Style Name [space] Emphasis Type", e.g. Dialogue Bold, Caption Ital, Thought BoldItal
+      // If there's a paragraph style associated with this source, cache it
+      if (sourceKeys.hasOwnProperty(textLine.source)) {
+        emphasisStyleName = theDoc.paragraphStyles.itemByID(sourceKeys[textLine.source]).name + " " + textLine.content[i].emphasis;
+      } else { // otherwise, come up with a sensible (?) default
+        emphasisStyleName = "Default " + textLine.content[i].emphasis;
+      }
+      // then, if we're in a line with a Style applied, override whatever we just did with that,
+      // because Styles take precedence over Sources. 
+      if (styleKeys.hasOwnProperty(textLine.style)) {
+        emphasisStyleName = theDoc.paragraphStyles.itemByID(styleKeys[textLine.style]).name + " " + textLine.content[i].emphasis;
+      }
+      // check for nonexistance of character style for this emphasis + paragraph style combination
+      if (!theDoc.characterStyles.itemByName(emphasisStyleName).isValid) {
+          // if it doesn't exist, create it
+          theDoc.characterStyles.add({
+            name: emphasisStyleName,
+          })
+      }
+      story.insertionPoints[-1].appliedCharacterStyle = emphasisStyleName; // "Bold", "Ital", or "BoldItal"
       story.insertionPoints[-1].contents = textLine.content[i].text; // place text
     } else { // there's no emphasis, so just place text
-      story.insertionPoints[-1].appliedCharacterStyle = theDoc.characterStyles[0];
+      story.insertionPoints[-1].appliedCharacterStyle = theDoc.characterStyles[0]; // use "none" character style
       story.insertionPoints[-1].contents = textLine.content[i].text;
     }
   }
