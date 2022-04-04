@@ -34,10 +34,12 @@ var sourceKeys = {};
 // createSfxLine creates a single text box with a paragraph style of "SFX" and places it in the center of
 // the page
 function createSfxLine(sfxText) {
+  var oldOrigin = theDoc.viewPreferences.rulerOrigin // save old ruler origin
+  theDoc.viewPreferences.rulerOrigin = RulerOrigin.PAGE_ORIGIN
   app.scriptPreferences.measurementUnit = MeasurementUnits.PICAS;
   var page = app.activeWindow.activePage;
-  var xPageSize = theMaster.pages[0].bounds[3] - theMaster.pages[0].bounds[1];
-  var yPageSize = theMaster.pages[0].bounds[2] - theMaster.pages[0].bounds[0];
+  var xPageSize = page.bounds[3] - page.bounds[1];
+  var yPageSize = page.bounds[2] - page.bounds[0];
   // if there's not already a style named SFX, create it.
   if (!theDoc.paragraphStyles.itemByName("SFX").isValid) {
     theDoc.paragraphStyles.add( {name: "SFX" } )
@@ -57,6 +59,8 @@ function createSfxLine(sfxText) {
   myFrame.contents = sfxText; // place SFX text in frame
   // apply style
   myFrame.paragraphs.everyItem().appliedParagraphStyle = theDoc.paragraphStyles.itemByName("SFX");
+  // reset ruler to whatever it was before
+  theDoc.viewPreferences.rulerOrigin = oldOrigin;
 }
 
 // placeNextLine places the next line in the selected textbox,

@@ -8,7 +8,80 @@ import {
   linkScriptNameToGrafStyle,
   getINDDGrafStyles,
 } from "../interface.js";
-import {externalDoc as theDoc} from "../app.jsx";
+import { externalDoc as theDoc } from "../app.jsx";
+
+// we're going to store preferences here; when we need preferences to persist, we'll
+// use useEffect hooks to read/write to this object.
+export let prefs = {
+  sfxContent: "text-only",
+};
+
+function SfxContentSelectItem(props) {
+  return (
+    <div className="sfx-option">
+      <input
+        className="sfx-option-btn"
+        onChange={props.handleChange}
+        type="radio"
+        id={props.id}
+        name="sfx-content"
+        value={props.value}
+        checked={props.selected}
+      />
+      <label htmlFor={props.id}>{props.text}</label>
+    </div>
+  );
+}
+// this is the radio button list that allows selection of different combinations of SFX text + transliteration
+// to be placed
+function SfxContentSelect() {
+  let [sfxContentPref, setSfxContentPref] = useState(prefs.sfxContent);
+  
+  function handleChange(e) {
+    setSfxContentPref(e.target.value)
+  }
+
+  useEffect(() => {
+    prefs.sfxContent = sfxContentPref;
+  });
+
+  return (
+    <form>
+      <div className="sfx-settings">
+        <div className="style-menu-description">
+          Select content of placed SFX:
+        </div>
+        <SfxContentSelectItem
+          id="babump"
+          value="text-only"
+          text={<div className="sfx-desc">babump babump</div>}
+          selected={sfxContentPref === "text-only"}
+          handleChange={handleChange}
+        />
+        <SfxContentSelectItem
+          id="doki"
+          value="tl-only"
+          text={<div className="sfx-desc">doki doki</div>}
+          selected={sfxContentPref === "tl-only"}
+          handleChange={handleChange}
+        />
+        <SfxContentSelectItem
+          id="doki-babump"
+          value="tl-text"
+          text={
+            <div className="sfx-desc">
+              doki doki
+              <br />
+              (babump babump)
+            </div>
+          }
+          selected={sfxContentPref === "tl-text"}
+          handleChange={handleChange}
+        />
+      </div>
+    </form>
+  );
+}
 
 // This component is just one item in a menu of available InDesign styles
 function MenuItem(props) {
@@ -28,7 +101,7 @@ function MenuItem(props) {
 */
 // props will contain a "type" (either "Source" or "Script")
 function GrafStyleSelectMenu(props) {
-  const [ selected, setSelected ] = useState(props.smap[props.name]);
+  const [selected, setSelected] = useState(props.smap[props.name]);
   const menuItems = props.grafStyles.map((el) => {
     return (
       <MenuItem
@@ -94,11 +167,11 @@ function StyleToGrafStyle(props) {
       </div>
       <table>
         <tbody>
-        <tr>
-          <th>Script Style</th>
-          <th>Paragraph Style</th>
-        </tr>
-        {allStyleMenus}
+          <tr>
+            <th>Script Style</th>
+            <th>Paragraph Style</th>
+          </tr>
+          {allStyleMenus}
         </tbody>
       </table>
     </div>
@@ -133,11 +206,11 @@ function SourceToGrafStyle(props) {
       </div>
       <table>
         <tbody>
-        <tr>
-          <th>Script Source</th>
-          <th>Paragraph Style</th>
-        </tr>
-        {allSourceMenus}
+          <tr>
+            <th>Script Source</th>
+            <th>Paragraph Style</th>
+          </tr>
+          {allSourceMenus}
         </tbody>
       </table>
     </div>
@@ -157,10 +230,11 @@ export function StyleMenuPanel(props) {
 
     refreshGrafStyles(); // call our async function to get currently defined graf styles from INDD
 
-    return () => {} // cleanup
+    return () => {}; // cleanup
   }, []);
   return (
     <div>
+      <SfxContentSelect />
       <SourceToGrafStyle grafStyles={grafStyles} />
       <StyleToGrafStyle grafStyles={grafStyles} />
     </div>

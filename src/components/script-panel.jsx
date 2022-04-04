@@ -16,6 +16,8 @@ import {
   createSfxLine,
   activateSerifuPanel,
 } from "../interface.js";
+import {prefs} from "./setup-panel.jsx";
+
 
 function Line(props) {
   // we're using the ref hook so highlit lines can scroll themselves into view
@@ -61,7 +63,7 @@ function Line(props) {
   return (
     <div className={props.lineIsNext ? "line-next" : "line"} ref={lineRef}>
       <div className="line-source">{props.source}</div>
-      {props.style ? <div className="line-style">{props.style}</div> : null}
+        {props.style ? <div className="line-style">{props.style}</div> : null}
       <div className="line-content">{lineContent}</div>
     </div>
   );
@@ -69,7 +71,17 @@ function Line(props) {
 
 function Sfx(props) {
   function placeSfxLine() {
-    createSfxLine(props.text);
+    switch (prefs.sfxContent) {
+      case "text-only":
+        createSfxLine(props.text);
+        break;
+      case "tl-only":
+        createSfxLine(props.tl);
+        break;        
+      case "tl-text":
+        createSfxLine(`${props.tl}\\n(${props.text})`);
+        break; 
+      }
   }
   return <div className="sfx" onClick={placeSfxLine}>{props.text}</div>;
 }
@@ -97,7 +109,7 @@ function Panel(props) {
       );
     }
     if (el.type === "Sfx") {
-      return <Sfx key={"sfx-" + i.toString()} text={el.text} />;
+      return <Sfx key={"sfx-" + i.toString()} text={el.text} tl={el.translationOf}  />;
     }
     if (el.type === "Note") {
       return <Note key={"note-" + i.toString()} text={el.text} />;

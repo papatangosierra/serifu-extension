@@ -9,9 +9,9 @@ This is an extension that allows for the convenient use of Serifu-formatted scri
 
 ## Installation
 
-Due to constraints in how Adobe deals with extensions, installing the Serifu extension is slightly convoluted. I highly recommend using Anastasiy's Extension Manager, which is unofficial but also Adobe-endorsed. 
+Due to constraints in how Adobe deals with extensions, installing the Serifu extension is slightly convoluted. I highly recommend using [Anastasiy's Extension Manager](https://install.anastasiy.com), which is unofficial but also Adobe-endorsed. 
 
-First, download and install the appropriate version of [Anastasiy's Extension Manager](https://install.anastasiy.com) for your platform.
+First, download and install the appropriate version of Anastasiy's Extension Manager for your platform.
 
 Then, download the Serifu extension zip. This contains the extension itself, `com.serifu.panel.zxp`, along with an example IDML file and Serifu script data.
 
@@ -43,19 +43,19 @@ There are two ways to move text from an open Serifu script into your InDesign do
 
 #### Autoplacing
 
-If your workflow involves placing empty text frames first, then filling them with text later, the Autoplace tool is meant to make this easier and faster. It is meant to behave similarly to InDesign's Place tool, which allows you to quickly place a series of images in a document.
+If your workflow involves placing empty text frames first and filling them with text later, the Autoplace tool is meant to make this easier and faster. It tries to behave similarly to InDesign's Place tool, which allows you to quickly place a series of images in a document.
 
 You can activate Autoplace by clicking the green "Activate Autoplace" button. Clicking this button again will deactivate Autoplace.
 
 SCREENSHOT OF THIS
 
-When Autoplace is active, the Serifu extension highlights the line that will be placed next. To place the text from a line into a text frame, simply select that text frame in InDesign.
+When Autoplace is active, the Serifu extension highlights the line that will be placed next. To place the text from the highlighted line into a text frame, simply select that text frame in InDesign.
 
 SCREENSHOT OF THIS
 
 The text will be placed in the frame, and the next line will be highlighted in the Serifu panel.
 
-To move forwards through the lines for a given page without placing any text, press space while Autoplace is active. Pressing shift-space will let you move backwards.
+To skip ahead over a line without placing any text, press space while Autoplace is active. Pressing shift-space will let you move backwards.
 
 SCREENSHOT OF THIS
 
@@ -65,7 +65,7 @@ Your position in the line queue will persist as long as you remain on a given In
 
 #### Staging
 
-If you prefer, Serifu can also automatically create text frames that are pre-populated with their text. This is called staging. You can stage either the text for the current page, or the entire document.
+If you prefer, Serifu can also automatically create text frames that are pre-populated with text from the script. This is called "staging." You can stage either the text for the current page, or the entire document.
 
 To see how text staging works, try clicking the "Stage Page Text" button near the top of the script display.
 
@@ -79,7 +79,7 @@ ILLUSTRATED SCREENSHOT OF THIS
 
 Serifu scripts associate every line of text with a mandatory **Source**, and an optional **Style**. A line's Source is most often the name of the character speaking it, but can also be a description of its role on the page, e.g. `Caption` or `Chapter Title`, or an indication of diegetic text like `Sign` or `Menu`.
 
-A line's Style, meanwhile is meant to indicate that the line's text is treated differently from whatever the default for that Source would be. Styles are most frequently used to indicate character dialogue whose text needs to use a different font, like `Aside`, `Screaming`, `Whisper`, etc.
+A line's Style, meanwhile, is meant to indicate that the line's text is treated differently from whatever the default for that Source would be. Styles are most frequently used to indicate character dialogue whose text needs to use a different font, like `Aside`, `Screaming`, `Whisper`, etc.
 
 SCREENSHOT OF A LINE WITH SOURCE AND STYLE HERE
 
@@ -99,6 +99,10 @@ SCREENSHOT OF A LINE WITH INLINE STYLED TEXT
 
 When you place a line like this, either via autoplace or staging, Serifu looks for an InDesign character style to apply to them. Specifically, it looks for a character style with the name of the paragraph style it would otherwise apply, followed by the words "Bold", "Ital", or "BoldItal", depending on which type of inline style was applied.
 
-For example, if you've defined a paragraph style called `Basic Caption`, then when Serifu encounters italics in the context of applying the `Basic Caption` paragraph style, it will apply a character style named `Basic Caption Ital`. If that character style doesn't already exist, it is created, then applied.
+For example, if you've defined a paragraph style called `Basic Caption`, when Serifu encounters italics in the context of applying the `Basic Caption` paragraph style, it will apply a character style named `Basic Caption Ital`. If that character style doesn't already exist, it is created, then applied.
 
-When Serifu creates character styles to apply like this, it doesn't make any assumptions about how those styles should be defined. In this case, to make `Basic Caption Ital` actually italicize text, you will need to manually edit the character style to display the italic version of the appropriate font.
+When Serifu creates character styles to apply like this, it doesn't make any assumptions about how those styles should be defined. In this case, in our example of `Basic Caption Ital`, to make it actually italicize text, you will need to manually edit the character style to display the italic version of the appropriate font.
+
+## Feedback
+
+If something is broken (which is quite possible) or something could be improved (which is almost certain) I would love to hear any feedback you have. You can email me at pts@sockdolager.net, or use [this feedback form](https://airtable.com/shrhauvfc3qLoo4vk) to submit a bug report or feature request.
