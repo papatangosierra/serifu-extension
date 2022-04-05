@@ -73,7 +73,7 @@ To see how text staging works, try clicking the "Stage Page Text" button near th
 
 When Serifu stages text, it creates one row of text frames for each panel specified in the script, situated just past the outside edge of the page. Within a row, the text frame closest to the edge of the page is the first text in that panel, then the second, and so on.
 
-![Example of staged text](docs/img/8.jpg)
+![Example of staged text](docs/img/8.jpeg)
 
 ### Placing SFX
 
