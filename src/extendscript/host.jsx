@@ -66,6 +66,9 @@ function createSfxLine(sfxText) {
 // placeNextLine places the next line in the selected textbox,
 // shifts the line queue, and returns the new state of the queue
 function placeNextLine(nextLine) {
+  if (theDoc.selection[0] instanceof Oval) {
+    theDoc.selection[0].contentType = ContentType.TEXT_TYPE;
+  }  
   //alert('attempting to place: ' + JSON.stringify(nextLine));
   if (theDoc.selection[0] instanceof TextFrame) //  if the new selection is a textFrame and the only thing selected
   {
