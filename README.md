@@ -55,7 +55,7 @@ When Autoplace is active, the Serifu extension highlights the line that will be 
 
 The text will be placed in the frame, and the next line will be highlighted in the Serifu panel.
 
-To skip ahead over a line without placing any text, press space while Autoplace is active. Pressing shift-space will let you move backwards.
+To skip ahead over a line without placing any text, press space while Autoplace is active. Pressing shift-space will let you move backwards. You can also click on any line while Autoplace is active in order to set it as the next line to be placed. 
 
 ![Skipping a line forwards and backwards](docs/img/6.gif)
 

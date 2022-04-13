@@ -16,19 +16,28 @@ import {
   createSfxLine,
   activateSerifuPanel,
 } from "../interface.js";
-import {prefs} from "./setup-panel.jsx";
-
+import { prefs } from "./setup-panel.jsx";
 
 function Line(props) {
   // we're using the ref hook so highlit lines can scroll themselves into view
   const lineRef = useRef(null);
 
+  function fireLineClickedEvent() {
+    console.log(`line clicked: ${props.id}`)
+    const e = new CustomEvent("jumpToNewLine", {
+      detail: {
+        id: props.id,
+      },
+    });
+    document.dispatchEvent(e);
+  }
+
   // if we're the next line, scroll into view
   useEffect(() => {
     if (props.lineIsNext && lineRef.current) {
-      lineRef.current.scrollIntoView({behavior:"smooth"});
+      lineRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [props.lineIsNext]) // putting lineIsNext here makes sure we'll run this effect any time it changes.
+  }, [props.lineIsNext]); // putting lineIsNext here makes sure we'll run this effect any time it changes.
 
   // build our dialogue line from the content prop
   const lineContent = props.content.map((el, i) => {
@@ -61,9 +70,9 @@ function Line(props) {
   });
 
   return (
-    <div className={props.lineIsNext ? "line-next" : "line"} ref={lineRef}>
+    <div className={props.lineIsNext ? "line-next" : "line"} ref={lineRef} onClick={fireLineClickedEvent}>
       <div className="line-source">{props.source}</div>
-        {props.style ? <div className="line-style">{props.style}</div> : null}
+      {props.style ? <div className="line-style">{props.style}</div> : null}
       <div className="line-content">{lineContent}</div>
     </div>
   );
@@ -77,13 +86,17 @@ function Sfx(props) {
         break;
       case "tl-only":
         createSfxLine(props.tl);
-        break;        
+        break;
       case "tl-text":
         createSfxLine(`${props.tl}\\n(${props.text})`);
-        break; 
-      }
+        break;
+    }
   }
-  return <div className="sfx" onClick={placeSfxLine}>{props.text}</div>;
+  return (
+    <div className="sfx" onClick={placeSfxLine}>
+      {props.text}
+    </div>
+  );
 }
 
 function Note(props) {
@@ -109,7 +122,9 @@ function Panel(props) {
       );
     }
     if (el.type === "Sfx") {
-      return <Sfx key={"sfx-" + i.toString()} text={el.text} tl={el.translationOf}  />;
+      return (
+        <Sfx key={"sfx-" + i.toString()} text={el.text} tl={el.translationOf} />
+      );
     }
     if (el.type === "Note") {
       return <Note key={"note-" + i.toString()} text={el.text} />;
@@ -139,12 +154,12 @@ function Page(props) {
   return (
     <div className="section">
       <div id="staging-buttons">
-      <button onClick={stagePageText} className={"stage-button"}>
-        Stage Page Text
-      </button>
-      <button onClick={stageAllText} className={"stage-button"}>
-        Stage All Text
-      </button>
+        <button onClick={stagePageText} className={"stage-button"}>
+          Stage Page Text
+        </button>
+        <button onClick={stageAllText} className={"stage-button"}>
+          Stage All Text
+        </button>
       </div>
       <div className="page">{panels}</div>
     </div>
@@ -184,16 +199,16 @@ export function ScriptPanel(props) {
   // and the React props that indicate the currently highlit line.
   // if it's being called from updateWithNewPage, we need to refresh the place queue to start at the first
   // element of the lines for the new page, and refresh the React props for highlighting
-  // It's asynchronous in order to avoid a race condition with INDD's firing of 
+  // It's asynchronous in order to avoid a race condition with INDD's firing of
   // afterSelectionChanged events
   const dispatchNextLine = async function (incoming_e) {
     let goodSelectionStatusPending = selectionIsNotEmpty();
     let goodSelectionStatus = await goodSelectionStatusPending;
     // console.log(`BUDDY, we have selected something: ${goodSelectionStatus}`)
+    // If we're updating curLine because a line was clicked
     if (autoplaceActive && goodSelectionStatus) {
       if (incoming_e.appId === "IDSN") {
         console.log("setting next line: " + JSON.stringify(lineQueue[curLine]));
-        // fire placeQueueUpdate to notify display to highlight next line.
         // actually place text in line
         placeLineInINDDTextFrame(lineQueue[curLine]);
         // bring Serifu panel back to focus (there is currently no programmatic way to do this)
@@ -209,7 +224,7 @@ export function ScriptPanel(props) {
         setCurLine(0);
       }
     }
-  };
+  }
 
   // advanceToNextLine is called when the space bar is pressed. It skips to the next item
   // in the line queue, unless we're at the end, in which case it wraps around to the beginning
@@ -225,20 +240,33 @@ export function ScriptPanel(props) {
   // the line queue, unless we're at the beginning, in which case it wraps around to the end.
   function reverseToPreviousLine() {
     if (curLine === 0) {
-      setCurLine(lineQueue.length - 1)
+      setCurLine(lineQueue.length - 1);
     } else {
-      setCurLine(curLine - 1)
+      setCurLine(curLine - 1);
     }
   }
-  
+
+  // goToArbiraryLine is called when autoplace is active and a line is clicked on. It sets curLine
+  // to the appropriate value such that the clicked-on line will be selected as next in the queue.
+  function setCurLineToLineWithId(e) {
+    console.log(`setCurLineToLineWithId: attempting to go to ${e.detail.id}`)
+    for (let i = 0; i < lineQueue.length; i++) {
+      if (lineQueue[i].id === e.detail.id) {
+        setCurLine(i)
+      }
+    }
+  }
+
   // handleKeyEvents is called by the event listener set for the keydown event. It checks which keys
   // were pressed and calls the appropriate function
   function handleKeyEvents(e) {
-    if ( autoplaceActive && e.code === "Space" && !e.shiftKey) { // space with no shift
+    if (autoplaceActive && e.code === "Space" && !e.shiftKey) {
+      // space with no shift
       e.preventDefault();
       advanceToNextLine();
     }
-    if ( autoplaceActive && e.code === "Space" && e.shiftKey) { // shift+space
+    if (autoplaceActive && e.code === "Space" && e.shiftKey) {
+      // shift+space
       e.preventDefault();
       reverseToPreviousLine();
     }
@@ -270,6 +298,9 @@ export function ScriptPanel(props) {
     document.addEventListener("placeQueueUpdate", dispatchNextLine);
     // add listener for keypress events
     document.addEventListener("keydown", handleKeyEvents);
+    // add listener for jumpToNewLine events
+    document.addEventListener("jumpToNewLine", setCurLineToLineWithId);
+
 
     registerSelectionCheck(dispatchNextLine);
 
@@ -278,6 +309,8 @@ export function ScriptPanel(props) {
       document.removeEventListener("onNewDisplayPage", updateWithNewPage);
       document.removeEventListener("placeQueueUpdate", dispatchNextLine);
       document.removeEventListener("keydown", handleKeyEvents);
+      document.removeEventListener("jumpToNewLine", setCurLineToLineWithId);
+
       unRegisterSelectionCheck(dispatchNextLine);
       unRegisterPageCheck();
     };
@@ -287,22 +320,20 @@ export function ScriptPanel(props) {
       <div>
         <button
           className={
-            autoplaceActive
-              ? "autoplace-toggle-on"
-              : "autoplace-toggle-off"
+            autoplaceActive ? "autoplace-toggle-on" : "autoplace-toggle-off"
           }
           id="autoplace-toggle-button"
           onClick={togglePlaceQueue}
         >
-          {autoplaceActive
-            ? "Deactivate Autoplace"
-            : "Activate autoplace"}
+          {autoplaceActive ? "Deactivate Autoplace" : "Activate autoplace"}
         </button>
         {/* <AutoplaceToggle autoplaceActive={autoplaceActive} /> */}
         <Page
           data={pageData}
           lineQueue={lineQueue}
-          nextLineID={(autoplaceActive && lineQueue[curLine]) ? lineQueue[curLine].id : null}
+          nextLineID={
+            autoplaceActive && lineQueue[curLine] ? lineQueue[curLine].id : null
+          }
         />
       </div>
     );
