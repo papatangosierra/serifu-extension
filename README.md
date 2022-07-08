@@ -111,7 +111,7 @@ Individual lines of text in Serifu may contain sections of bolded, italicized, o
 
 When you place a line like this, either via autoplace or staging, Serifu looks for an InDesign character style to apply to them. Specifically, it looks for a character style with the name of the paragraph style it would otherwise apply, followed by the words "Bold", "Ital", or "BoldItal", depending on which type of inline style was applied.
 
-For example, if you've defined a paragraph style called `Caption`, when Serifu encounters italics in the context of applying the `Caption` paragraph style, it will apply a character style named `Basic Caption Ital`. If that character style doesn't already exist, it is created, then applied.
+For example, if you've defined a paragraph style called `Caption`, when Serifu encounters italics in the context of applying the `Caption` paragraph style, it will apply a character style named `Caption Ital`. If that character style doesn't already exist, it is created, then applied.
 
 When Serifu creates character styles to apply like this, it doesn't make any assumptions about how those styles should be defined. In this case, in our example of `Caption Ital`, to make it actually italicize text, you will need to manually edit the character style to display the italic version of the appropriate font.
 
